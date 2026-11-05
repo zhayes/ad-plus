@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3.2 · 底部主模块 + 顶部子 tab</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen" style="height:980px">
+
+  <div class="app-shell">
+
+    <!-- ---------------------------------------------------------- top: context -->
+    <div class="topbar min" style="position:relative">
+      <div class="project-chip" style="height:28px">
+        <span class="sq" style="width:16px;height:16px"></span>
+        <span class="nm" style="font-size:11.5px">红薯 · 炭火现烤 15s</span>
+        <span class="cv">V3</span>
+        <span class="st"><span class="dot warn"></span>方案待确认</span>
+        <i class="callout" style="right:-7px;bottom:-7px">3</i>
+      </div>
+
+      <div class="sub-tabs" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">
+        <span class="sub-tab on">画布</span>
+        <span class="sub-tab">分镜</span>
+        <span class="sub-tab" style="position:relative">审片<i class="callout" style="right:-7px;top:-9px">2</i></span>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="cta-top" style="position:relative">
+        看方案与报价 →
+        <i class="callout" style="left:-7px;bottom:-7px">4</i>
+      </div>
+
+    </div>
+
+    <!-- -------------------------------------------------------------- canvas -->
+    <div class="canvas-area" style="top:44px;bottom:36px">
+      <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:920px;height:760px;background:radial-gradient(ellipse at center, rgba(139,47,201,.13), rgba(224,51,138,.05) 44%, transparent 70%);filter:blur(26px);pointer-events:none"></div>
+
+      <div class="frame-col" style="top:76px">
+        <div class="ph video" style="width:360px;height:640px;border-radius:10px;position:relative">
+          <span class="big">▶</span>
+          <span>9:16 · V3</span>
+          <span style="font-size:10px">1080 × 1920 · 15.0s</span>
+          <span class="badge" style="position:absolute;left:10px;bottom:10px">V3 · 当前</span>
+          <span class="badge" style="position:absolute;right:10px;bottom:10px">1080p</span>
+        </div>
+        <div class="transport" style="width:360px">
+          <span>▶</span>
+          <span class="mono">0:03 / 0:15</span>
+          <div class="track"><i style="width:22%"></i><b style="left:22%"></b></div>
+          <span>🔊</span>
+        </div>
+      </div>
+
+      <!-- chat stays a tool, not a module -->
+      <div class="chat-pill">
+        <span style="color:#f3c3e3">✦</span> 导演
+        <span class="badge">⌘J</span>
+        <i class="callout" style="right:-7px;top:-9px">6</i>
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------- bottom modules -->
+    <div class="dockbar">
+      <span class="dock-item"><span class="ic">▤</span>项目</span>
+      <span class="dock-item on" style="position:relative"><span class="ic">▣</span>制作<i class="callout" style="right:-7px;top:-10px">1</i></span>
+      <span class="dock-item"><span class="ic">▦</span>资产</span>
+      <span class="dock-item"><span class="ic">◷</span>任务<span class="num">2</span></span>
+
+      <div class="spacer"></div>
+
+      <span class="pill ok" style="position:relative">
+        <span class="dot ok"></span>QA 4/4
+        <span style="color:#33405a">·</span>
+        <span class="mono" style="font-size:9.5px">$0.18/$2.00</span>
+        <i class="callout" style="left:-7px;top:-9px">5</i>
+      </span>
+      <span class="pill hot" style="height:22px;font-size:10px"><span class="dot accent"></span>1 待确认</span>
+      <span class="icon-btn" style="width:24px;height:24px" title="设置">⚙</span>
+      <span class="icon-btn" style="width:24px;height:24px" title="帮助">?</span>
+    </div>
+
+  </div>
+
+  <!-- -------------------------------------------------------------- legend -->
+  <div class="legend" style="height:80px;padding:9px 22px;grid-template-columns:repeat(3,1fr);gap:4px 22px">
+    <div><i>1</i>底部是主模块：项目 / 制作 / 资产 / 任务</div>
+    <div><i>2</i>顶部是当前模块的子 tab：画布 / 分镜 / 审片</div>
+    <div><i>3</i>项目 chip 打开简报 / 版本 / 交付，不跳新页</div>
+    <div><i>4</i>每屏只有一个主操作，放在顶部右侧</div>
+    <div><i>5</i>QA / 花费 / 待办在底栏右侧，只读、不抢导航</div>
+    <div><i>6</i>导演 ⌘J 从右侧浮出，不占一级导航</div>
+  </div>
+</div>
+</body>
+</html>

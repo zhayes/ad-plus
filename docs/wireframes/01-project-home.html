@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ · 项目首页线框</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen">
+
+  <!-- ------------------------------------------------------------ top bar -->
+  <div class="topbar">
+    <div class="brand"><div class="brand-mark">A</div><div class="brand-name">Ad<i>+</i></div></div>
+    <div class="search">⌕ 搜索项目 / 素材 <kbd>⌘K</kbd></div>
+    <div class="spacer"></div>
+    <button class="btn">＋ 新建项目</button>
+    <div class="icon-btn">⚙</div>
+  </div>
+
+  <div class="body" style="height:846px">
+    <!-- ------------------------------------------------------------- rail -->
+    <aside class="rail">
+      <div class="rail-head"><b>项目</b><span>8</span><div class="spacer"></div><span>⌄</span></div>
+      <div class="rail-list">
+        <div class="proj active">
+          <div class="proj-cover"></div>
+          <div style="min-width:0">
+            <div class="proj-title">红薯 · 炭火现烤 15s</div>
+            <div class="proj-meta"><span class="dot accent"></span>待审分镜 · 2 分钟前</div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="proj-cover"></div>
+          <div style="min-width:0">
+            <div class="proj-title">咖啡 · 冷萃 30s</div>
+            <div class="proj-meta"><span class="dot ok"></span>已交付 · 昨天</div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="proj-cover"></div>
+          <div style="min-width:0">
+            <div class="proj-title">露营灯 · 夜景 15s</div>
+            <div class="proj-meta"><span class="dot warn"></span>生成中 · 昨天</div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="proj-cover"></div>
+          <div style="min-width:0">
+            <div class="proj-title">手作皂 · 开箱 30s</div>
+            <div class="proj-meta"><span class="dot"></span>草稿 · 11月3日</div>
+          </div>
+        </div>
+        <div class="proj">
+          <div class="proj-cover"></div>
+          <div style="min-width:0">
+            <div class="proj-title">黄海岸线 · 3D 世界</div>
+            <div class="proj-meta"><span class="dot"></span>已归档 · 11月2日</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-sep"></div>
+      <div class="rail-item"><span class="ic">▦</span>素材库</div>
+      <div class="rail-item"><span class="ic">◫</span>模板</div>
+      <div class="rail-item"><span class="ic">◷</span>任务<span class="badge" style="margin-left:auto">1 运行</span></div>
+
+      <div class="rail-foot"><span>⚙</span>设置<div class="spacer"></div><span class="badge">本地</span></div>
+    </aside>
+
+    <!-- ------------------------------------------------------------- main -->
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px">
+            <div class="page-title">红薯 · 炭火现烤 15s</div>
+            <span class="status">● 待审分镜</span>
+          </div>
+          <div class="page-sub">
+            <span class="chip solid">抖音</span>
+            <span class="chip">9:16</span>
+            <span class="chip">15s</span>
+            <span class="chip">V3</span>
+            <span class="chip">5 个镜头</span>
+            <span class="chip ghost" style="border-color:transparent;background:transparent;color:var(--faint)">最后更新 2 分钟前</span>
+          </div>
+        </div>
+        <div class="head-actions">
+          <span style="position:relative">
+            <button class="btn primary">继续制作 →</button>
+            <i class="callout" style="right:-7px;top:-7px">1</i>
+          </span>
+          <button class="btn">导出</button>
+          <button class="btn ghost">⋯</button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:16px">
+
+        <!-- ------------------------------------------------------- left -->
+        <div class="stack">
+          <section class="card">
+            <div class="card-head">
+              <span>最新版本</span>
+              <span class="chip on" style="height:20px">V3</span>
+              <span class="chip" style="height:20px">V2</span>
+              <span class="chip" style="height:20px">V1</span>
+              <div class="spacer"></div>
+              <button class="btn ghost sm">对比 V2</button>
+            </div>
+            <div class="card-body" style="padding:12px">
+              <div class="stage" style="height:392px;position:relative;gap:38px">
+                <div class="ph video" style="width:220px;height:390px;border-radius:8px">
+                  <span class="big">▶</span>
+                  <span>9:16 成片预览 · V3</span>
+                  <span style="font-size:10px">1080 × 1920 · 15.0s · 2.53 MB</span>
+                </div>
+                <div style="width:252px">
+                  <div class="row">
+                    <span class="tiny">对比上一版</span><span class="badge">V2</span>
+                  </div>
+                  <div class="ph" style="width:112px;height:199px;margin-top:7px">
+                    <span style="font-size:10px">V2 预览</span>
+                  </div>
+                  <div class="tiny" style="margin-top:9px;line-height:1.65">
+                    差异：s3 放慢 8 帧<br />
+                    新增中文字幕<br />
+                    音量 -13.2 LUFS
+                  </div>
+                  <button class="btn ghost sm" style="margin-top:7px;padding-left:0">查看差异 →</button>
+                </div>
+                <div class="row" style="position:absolute;right:12px;top:12px;gap:6px">
+                  <span class="badge ok">H.264 / AAC</span>
+                </div>
+              </div>
+              <div class="transport" style="margin-top:10px">
+                <span>▶</span><span class="mono">0:03 / 0:15</span>
+                <div class="track"><i></i><b></b></div>
+                <span>🔊</span><span>1.0×</span>
+              </div>
+              <div class="row" style="margin-top:10px;gap:6px">
+                <button class="btn sm">↓ 下载 MP4</button>
+                <button class="btn sm">在 Finder 显示</button>
+                <button class="btn sm ghost">复制分享</button>
+                <div class="spacer"></div>
+                <span class="tiny">V3 生成于 09:38 · 花费 $0.42</span>
+              </div>
+            </div>
+            <i class="callout" style="right:14px;top:12px">2</i>
+          </section>
+
+          <section class="card">
+            <div class="card-head">
+              <span>分镜</span><span class="badge">5</span>
+              <span class="tiny" style="font-weight:400">总时长 15.0s · 已锁 2 镜</span>
+              <div class="spacer"></div>
+              <span class="tiny">点击镜头 → 工作台</span>
+              <button class="btn ghost sm">逐镜审片 →</button>
+            </div>
+            <div class="card-body" style="padding:10px 12px">
+              <div class="strip">
+                <div class="shot">
+                  <div class="thumb ph" style="height:76px"><span>s1</span></div>
+                  <div class="sid"><span class="dot ok"></span>s1 · hook<span class="lock">🔒</span></div>
+                  <div class="dur">0.0 – 2.2s</div>
+                </div>
+                <div class="shot">
+                  <div class="thumb ph" style="height:76px"><span>s2</span></div>
+                  <div class="sid"><span class="dot ok"></span>s2 · build<span class="lock">🔒</span></div>
+                  <div class="dur">2.2 – 5.0s</div>
+                </div>
+                <div class="shot sel">
+                  <div class="thumb ph" style="height:76px"><span>s3</span></div>
+                  <div class="sid"><span class="dot warn"></span>s3 · proof</div>
+                  <div class="dur">5.0 – 9.5s</div>
+                </div>
+                <div class="shot">
+                  <div class="thumb ph" style="height:76px"><span>s4</span></div>
+                  <div class="sid"><span class="dot ok"></span>s4 · proof</div>
+                  <div class="dur">9.5 – 12.5s</div>
+                </div>
+                <div class="shot">
+                  <div class="thumb ph" style="height:76px"><span>s5</span></div>
+                  <div class="sid"><span class="dot"></span>s5 · cta</div>
+                  <div class="dur">12.5 – 15.0s</div>
+                </div>
+              </div>
+            </div>
+            <i class="callout" style="left:14px;top:12px">3</i>
+          </section>
+        </div>
+
+        <!-- ------------------------------------------------------ right -->
+        <div class="stack">
+
+          <section class="card" style="border-color:#4a2a3d;background:linear-gradient(180deg,#1a1220,#10131b)">
+            <div class="card-head" style="border-color:#33212d">
+              <span>待办</span><span class="badge warn">1</span>
+              <div class="spacer"></div>
+              <span class="mono tiny" style="color:#f0cd83">剩 12:34</span>
+            </div>
+            <div class="card-body" style="padding:11px 12px">
+              <div style="font-size:12.5px;font-weight:600">分镜待确认</div>
+              <div class="tiny" style="margin-top:4px">5 个镜头已出关键帧，逐镜通过后才会生成付费素材。</div>
+              <div class="row" style="margin-top:9px">
+                <button class="btn primary sm">去确认</button>
+                <button class="btn ghost sm">稍后</button>
+              </div>
+            </div>
+            <i class="callout" style="right:-7px;top:-7px">4</i>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span>简报</span><div class="spacer"></div><button class="btn ghost sm">编辑</button></div>
+            <div class="card-body" style="padding:10px 12px">
+              <div class="kv"><span>卖什么</span><span class="v">炭火现烤红薯</span></div>
+              <div class="kv"><span>给谁</span><span class="v">18–30 女性 · 夜宵</span></div>
+              <div class="kv"><span>投哪里</span><span class="v">抖音 · 9:16 · 15s</span></div>
+              <div class="kv"><span>什么调性</span><span class="v">烟火气 · 治愈</span></div>
+              <div class="kv"><span>质量档</span><span class="v">标准 · 图生视频</span></div>
+              <div class="hr"></div>
+              <div class="row" style="gap:5px">
+                <span class="chip" style="height:20px">流糖</span>
+                <span class="chip" style="height:20px">现烤</span>
+                <span class="chip" style="height:20px">街角</span>
+              </div>
+            </div>
+            <i class="callout" style="right:-7px;bottom:-7px">5</i>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span>成片体检</span><div class="spacer"></div><span class="badge warn">1 项提示</span></div>
+            <div class="card-body" style="padding:8px 12px">
+              <div class="kv"><span class="dot ok"></span>技术 · 1080×1920 H.264 / 无丢帧</div>
+              <div class="kv"><span class="dot ok"></span>画面 · 10 处抽帧 · 无黑帧</div>
+              <div class="kv"><span class="dot warn"></span>音频 · -13.2 LUFS（目标 -14）</div>
+              <div class="kv"><span class="dot ok"></span>合规 · 未检出绝对化用语</div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><span>版本</span><div class="spacer"></div><span class="tiny">保留 3 个</span></div>
+            <div class="card-body" style="padding:8px 12px">
+              <div class="kv"><span>V3</span><span class="v mono">09:38 · $0.42</span></div>
+              <div class="kv"><span>V2</span><span class="v mono">09:21 · $0.36</span></div>
+              <div class="kv"><span>V1</span><span class="v mono">09:05 · $0.18</span></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head" style="padding:8px 12px"><span>本片花费</span><div class="spacer"></div><span class="mono" style="color:#d9c7d2">$0.42 / $2.00</span></div>
+            <div class="card-body" style="padding:8px 12px">
+              <div class="track" style="height:5px"><i style="width:21%"></i></div>
+              <div class="tiny" style="margin-top:6px">免费档：本地动效 · 标准档：图生视频 · 精修档：视频模型 + 配音</div>
+            </div>
+            <i class="callout" style="right:-7px;top:-7px">6</i>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ------------------------------------------------------------- legend -->
+  <div class="legend">
+    <div><i>1</i>顶栏只放项目参数与主操作；模型选择降级到设置</div>
+    <div><i>2</i>播放器按真实 9:16 呈现，版本可切换、可对比</div>
+    <div><i>3</i>分镜条显示时长 / 锁定 / 状态，点击直达对应镜头</div>
+    <div><i>4</i>待办只属于当前项目，带倒计时与“下一步”按钮</div>
+    <div><i>5</i>简报是项目的第一公民，缺失时引导补全</div>
+    <div><i>6</i>花费与预算常驻，解决“无付费项”的预期错位</div>
+  </div>
+</div>
+</body>
+</html>

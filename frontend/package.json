@@ -1,0 +1,28 @@
+{
+  "name": "adplus-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.28.5",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kobalte/core": "0.13.14",
+    "@solidjs/router": "1.0.1",
+    "solid-js": "1.9.18"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.4",
+    "@types/node": "26.6.6",
+    "tailwindcss": "4.3.4",
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-solid": "2.11.15",
+    "vitest": "5.1.0"
+  }
+}

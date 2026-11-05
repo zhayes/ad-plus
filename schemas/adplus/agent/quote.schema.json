@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ad+ cost quote",
+  "type": "object",
+  "required": ["id", "project_id", "status", "currency", "total_usd", "line_items", "created_at"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pending", "approved", "rejected", "timeout"]},
+    "currency": {"const": "USD"},
+    "total_usd": {"type": "number", "minimum": 0},
+    "low_usd": {"type": "number", "minimum": 0},
+    "high_usd": {"type": "number", "minimum": 0},
+    "eta_seconds": {"type": "number", "minimum": 0},
+    "created_at": {"type": "string"},
+    "headline": {"type": "string"},
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["tool", "label", "usd"],
+        "properties": {
+          "tool": {"type": "string"},
+          "label": {"type": "string"},
+          "usd": {"type": "number", "minimum": 0},
+          "seconds": {"type": "number", "minimum": 0},
+          "count": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["by", "at"],
+      "properties": {
+        "by": {"type": "string"},
+        "at": {"type": "string"},
+        "comment": {"type": "string"}
+      }
+    }
+  }
+}

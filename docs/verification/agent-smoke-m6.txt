@@ -1,0 +1,2 @@
+tool=mcp__openmontage__om_capabilities
+answer=是的，渲染可用（ffmpeg、Remotion 和 HyperFrames 均已就绪）。

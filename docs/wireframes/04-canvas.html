@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3 · 画布（默认态）</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen compact">
+
+  <!-- ------------------------------------------------------------ top bar -->
+  <div class="topbar min">
+    <div class="project-chip">
+      <span class="sq"></span>
+      <span class="nm">红薯 · 炭火现烤</span>
+      <span class="cv">V3</span>
+      <span class="st"><span class="dot warn"></span>方案待确认</span>
+      <span class="cv">⌄</span>
+      <i class="callout" style="right:-7px;bottom:-7px">1</i>
+    </div>
+
+    <div class="mode-switch" style="position:absolute;left:50%;transform:translateX(-50%)">
+      <span class="on">画布</span><span>分镜</span><span>审片</span>
+    </div>
+
+    <div class="spacer"></div>
+    <span class="pill ok" style="position:relative">
+      <span class="dot ok"></span>QA 4/4
+      <span style="color:#33405a">·</span>
+      <span class="mono" style="font-size:10px">$0.18 / $2.00</span>
+      <i class="callout" style="left:-7px;bottom:-7px">6</i>
+    </span>
+    <span class="pill hot"><span class="dot accent"></span>1 待确认</span>
+    <span class="icon-btn" title="更多">⋯</span>
+  </div>
+
+  <!-- -------------------------------------------------------------- canvas -->
+  <div class="canvas-area">
+
+    <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:980px;height:760px;background:radial-gradient(ellipse at center, rgba(139,47,201,.14), rgba(224,51,138,.06) 42%, transparent 70%);filter:blur(26px);pointer-events:none"></div>
+
+    <div class="frame-col">
+      <div class="ph video" style="width:340px;height:604px;border-radius:10px;position:relative">
+        <span class="big">▶</span>
+        <span>9:16 · V3</span>
+        <span style="font-size:10px">1080 × 1920 · 15.0s</span>
+        <span class="badge" style="position:absolute;left:10px;bottom:10px">V3 · 当前</span>
+        <span class="badge" style="position:absolute;right:10px;bottom:10px">1080p</span>
+        <i class="callout" style="left:-8px;top:-8px">2</i>
+      </div>
+
+      <div class="transport" style="width:340px">
+        <span>▶</span>
+        <span class="mono">0:03 / 0:15</span>
+        <div class="track"><i style="width:22%"></i><b style="left:22%"></b></div>
+        <span>🔊</span>
+      </div>
+
+      <div class="film-strip" style="position:relative">
+        <div class="film-item">
+          <div class="th ph" style="position:relative"><span style="font-size:11px">s1</span><span style="position:absolute;right:3px;top:3px;font-size:8px;color:var(--dim)">🔒</span></div>
+          <div class="lb"><b>s1</b><span>2.2s</span></div>
+        </div>
+        <div class="film-item">
+          <div class="th ph" style="position:relative"><span style="font-size:11px">s2</span><span style="position:absolute;right:3px;top:3px;font-size:8px;color:var(--dim)">🔒</span></div>
+          <div class="lb"><b>s2</b><span>2.8s</span></div>
+        </div>
+        <div class="film-item sel">
+          <div class="th ph"><span style="font-size:11px">s3</span></div>
+          <div class="lb"><b>s3</b><span>4.5s</span></div>
+        </div>
+        <div class="film-item">
+          <div class="th ph"><span style="font-size:11px">s4</span></div>
+          <div class="lb"><b>s4</b><span>3.0s</span></div>
+        </div>
+        <div class="film-item">
+          <div class="th ph"><span style="font-size:11px">s5</span></div>
+          <div class="lb"><b>s5</b><span>2.5s</span></div>
+        </div>
+        <i class="callout" style="right:-8px;top:-8px">3</i>
+      </div>
+    </div>
+
+    <!-- collapsed chat -->
+    <div class="dock">
+      <span class="spark">✦</span>
+      <span>问导演，或直接说改哪里…</span>
+      <span class="kb badge">⌘J</span>
+      <i class="callout" style="right:-7px;top:-7px">4</i>
+    </div>
+
+    <!-- one primary action -->
+    <div class="cta-main">
+      看方案与报价 →
+      <i class="callout" style="right:-7px;top:-7px">5</i>
+    </div>
+
+  </div>
+
+  <!-- -------------------------------------------------------------- legend -->
+  <div class="legend" style="height:64px;padding:8px 22px;grid-template-columns:repeat(3,1fr);gap:3px 22px">
+    <div><i>1</i>状态即入口：一个 chip 展开完整流程，不占常驻空间</div>
+    <div><i>2</i>画布占满窗口：面板只做浮层，永不挤压画面</div>
+    <div><i>3</i>分镜收成一条胶片；Tab 才展开为工作条</div>
+    <div><i>4</i>对话收成 38px Dock；⌘J 展开浮层，不抢画面</div>
+    <div><i>5</i>每屏只有一个主操作，文案随状态自动变化</div>
+    <div><i>6</i>质量与花费合成一个状态药丸；异常才变红</div>
+  </div>
+</div>
+</body>
+</html>

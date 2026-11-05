@@ -1,0 +1,3 @@
+# Ad+ specific dependencies (upstream requirements live in vendor/openmontage)
+pywebview>=6.0          # fallback native window when the Tauri shell is unavailable
+mcp>=1.0                # Model Context Protocol server used by adplus.mcp

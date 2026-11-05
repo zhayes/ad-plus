@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3 · 审片（同一画布）</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen compact">
+
+  <!-- ------------------------------------------------------------ top bar -->
+  <div class="topbar min">
+    <div class="project-chip">
+      <span class="sq"></span>
+      <span class="nm">红薯 · 炭火现烤</span>
+      <span class="cv">V3</span>
+      <span class="st" style="color:#f3c3e3"><span class="dot accent"></span>审片中</span>
+      <span class="cv">⌄</span>
+    </div>
+
+    <div class="mode-switch" style="position:absolute;left:50%;transform:translateX(-50%)">
+      <span>画布</span><span>分镜</span><span class="on">审片</span>
+      <i class="callout" style="right:-7px;bottom:-8px">1</i>
+    </div>
+
+    <div class="spacer"></div>
+    <span class="pill hot"><span class="dot accent"></span>剩 12:34</span>
+    <button class="btn ghost sm">退出审片</button>
+    <div style="width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:10px;color:var(--dim)">C</div>
+  </div>
+
+  <!-- -------------------------------------------------------------- canvas -->
+  <div class="canvas-area" style="display:flex;padding:18px 20px;gap:16px">
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <div class="row" style="margin-bottom:10px">
+        <b style="font-size:12.5px">分镜</b><span class="badge">5</span>
+        <span class="tiny">默认全部通过，只标有问题的那一镜</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm">全不选</button>
+        <button class="btn ghost sm">全选</button>
+      </div>
+
+      <div class="review-grid">
+        <!-- s1 -->
+        <div class="review-card on">
+          <div style="display:flex;gap:10px">
+            <div class="ph shot-th" style="width:150px;height:267px;flex:0 0 150px">
+              <span class="big">s1</span><span>关键帧</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="review-title"><b>s1</b><span class="badge">hook</span></div>
+              <div class="review-meta mono">0.0 – 2.2s</div>
+              <div class="tiny" style="line-height:1.55">黑场。红薯呼吸，第 16 帧刀光扫过，切面张开。</div>
+              <div class="review-meta">转场 cut</div>
+              <div style="margin-top:auto;font-size:10.5px;color:#8ee6bf">✓ 已通过</div>
+            </div>
+          </div>
+          <div class="check">✓</div>
+        </div>
+
+        <!-- s2 -->
+        <div class="review-card on">
+          <div style="display:flex;gap:10px">
+            <div class="ph shot-th" style="width:150px;height:267px;flex:0 0 150px">
+              <span class="big">s2</span><span>关键帧</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="review-title"><b>s2</b><span class="badge">build</span></div>
+              <div class="review-meta mono">2.2 – 5.0s</div>
+              <div class="tiny" style="line-height:1.55">切面变正面全幅，糖丝开始拉长，暖光压上。</div>
+              <div class="review-meta">转场 连续推近</div>
+              <div style="margin-top:auto;font-size:10.5px;color:#8ee6bf">✓ 已通过</div>
+            </div>
+          </div>
+          <div class="check">✓</div>
+        </div>
+
+        <!-- s3 -->
+        <div class="review-card off">
+          <div style="display:flex;gap:10px">
+            <div class="ph shot-th" style="width:150px;height:267px;flex:0 0 150px">
+              <span class="big">s3</span><span>关键帧</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="review-title"><b>s3</b><span class="badge">proof</span><span class="badge warn">待改</span></div>
+              <div class="review-meta mono">5.0 – 9.5s</div>
+              <div class="tiny" style="line-height:1.55">糖丝坠落，温度条与读数同步。当前节奏偏快。</div>
+              <div class="review-meta" style="color:#f3c3e3">✎ 切面再慢 6 帧</div>
+              <div style="margin-top:auto;font-size:10.5px;color:#f3c3e3">已标问题，等待返工</div>
+            </div>
+          </div>
+          <div class="check">✕</div>
+        </div>
+
+        <!-- s4 -->
+        <div class="review-card on">
+          <div style="display:flex;gap:10px">
+            <div class="ph shot-th" style="width:150px;height:267px;flex:0 0 150px">
+              <span class="big">s4</span><span>关键帧</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="review-title"><b>s4</b><span class="badge">proof</span></div>
+              <div class="review-meta mono">9.5 – 12.5s</div>
+              <div class="tiny" style="line-height:1.55">「它得烤到滴糖。」字标上浮，三格数据依次出现。</div>
+              <div class="review-meta">转场 硬切</div>
+              <div style="margin-top:auto;font-size:10.5px;color:#8ee6bf">✓ 已通过</div>
+            </div>
+          </div>
+          <div class="check">✓</div>
+        </div>
+
+        <!-- s5 -->
+        <div class="review-card on">
+          <div style="display:flex;gap:10px">
+            <div class="ph shot-th" style="width:150px;height:267px;flex:0 0 150px">
+              <span class="big">s5</span><span>关键帧</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="review-title"><b>s5</b><span class="badge">cta</span></div>
+              <div class="review-meta mono">12.5 – 15.0s</div>
+              <div class="tiny" style="line-height:1.55">单行 CTA「今晚来一个」+ logo，落版停留 0.8s。</div>
+              <div class="review-meta">转场 淡出</div>
+              <div style="margin-top:auto;font-size:10.5px;color:#8ee6bf">✓ 已通过</div>
+            </div>
+          </div>
+          <div class="check">✓</div>
+        </div>
+
+        <!-- overall -->
+        <div class="review-card" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+          <div class="ph" style="width:62px;height:62px;border-radius:50%;border-style:solid;font-size:16px">▶</div>
+          <div style="font-size:11.5px">整体预览</div>
+          <div class="tiny">从头看 15.0s</div>
+          <div style="display:flex;width:78%;height:8px;border-radius:4px;overflow:hidden;border:1px solid var(--line)">
+            <div style="flex:2.2;background:#1f3a30"></div>
+            <div style="flex:2.8;background:#1f3a30"></div>
+            <div style="flex:4.5;background:#3a2433"></div>
+            <div style="flex:3.0;background:#1f3a30"></div>
+            <div style="flex:2.5;background:#1f3a30"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------- side panel -->
+    <aside class="side-panel">
+      <div class="row">
+        <b style="font-size:12.5px">审片</b><span class="badge">V3</span>
+        <div class="spacer"></div><span class="tiny">Esc 返回画布</span>
+      </div>
+
+      <div class="ph" style="width:150px;height:267px;align-self:center;margin-top:2px">
+        <span class="big">▶</span>
+        <span>s3 · 5.0–9.5s</span>
+      </div>
+
+      <div class="row">
+        <b>s3</b><span class="badge warn">待改</span>
+        <div class="spacer"></div><span class="tiny mono">proof</span>
+      </div>
+
+      <div class="tiny">画面</div>
+      <div style="font-size:10.5px;line-height:1.55;color:var(--dim)">糖丝从切面坠落，温度条与读数同步；暖光压边。</div>
+      <div class="tiny" style="margin-top:4px">运镜 / 转场</div>
+      <div style="font-size:10.5px;line-height:1.55;color:var(--dim)">固定机位 1.02× · 叠化 → 硬切</div>
+
+      <div class="hr"></div>
+      <div class="tiny">质检</div>
+      <div class="qa-row"><span class="dot ok"></span>总时长 15.0s / 15.0s</div>
+      <div class="qa-row"><span class="dot ok"></span>字幕安全区</div>
+      <div class="qa-row"><span class="dot ok"></span>合规用语</div>
+      <div class="qa-row"><span class="dot"></span>音量 生成后检查</div>
+
+      <div class="hr"></div>
+      <div class="row" style="font-size:11px"><span class="tiny">本次再花</span><div class="spacer"></div><span class="mono">$0.24 – $0.38</span></div>
+      <div class="row" style="font-size:11px;margin-top:2px"><span class="tiny">已花 / 上限</span><div class="spacer"></div><span class="mono">$0.18 / $2.00</span></div>
+      <div class="tiny" style="margin-top:auto;line-height:1.5">只生成其余 4 镜；s3 返工后再单独生成。</div>
+    </aside>
+
+    <!-- ------------------------------------------------------- decision bar -->
+    <div class="decision-bar">
+      <span class="dot warn"></span>
+      <b style="font-size:11.5px">4 镜通过 · 1 镜待改</b>
+      <span class="tiny">只生成 4 镜 · s3 返工后再生成</span>
+      <div class="spacer"></div>
+      <button class="btn sm">打回并说明</button>
+      <button class="btn primary sm">通过 4 镜并生成</button>
+      <i class="callout" style="right:-7px;top:-7px">6</i>
+    </div>
+  </div>
+
+  <!-- -------------------------------------------------------------- legend -->
+  <div class="legend" style="height:64px;padding:8px 22px;grid-template-columns:repeat(3,1fr);gap:3px 22px">
+    <div><i>1</i>审片是画布的第三个态，不是新页面；退出即回原位</div>
+    <div><i>2</i>默认全部通过，只标问题镜：1 次操作替代 5 次确认</div>
+    <div><i>3</i>视频预览常驻，判断不离开画面</div>
+    <div><i>4</i>质检全程可见；不合格时主操作变成“修复并继续”</div>
+    <div><i>5</i>花费与本次影响同屏，不另开面板</div>
+    <div><i>6</i>一个决定条完成审批，记录绑定版本，不可改历史</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3.3 · 任务</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen" style="height:980px">
+  <div class="app-shell">
+
+    <!-- ------------------------------------------------------------- top -->
+    <div class="topbar min" style="position:relative">
+      <div class="ctx-title">任务 <span class="badge">4</span><span class="ctx-sub">1 运行 · 1 失败</span></div>
+
+      <div class="sub-tabs" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">
+        <span class="sub-tab on">全部</span>
+        <span class="sub-tab">运行中</span>
+        <span class="sub-tab">失败</span>
+        <i class="callout" style="right:-7px;top:-9px">1</i>
+      </div>
+
+      <div class="spacer"></div>
+      <button class="btn ghost sm" style="margin-right:4px">刷新</button>
+      <span class="chip">项目：全部 ⌄</span>
+    </div>
+
+    <!-- ------------------------------------------------------------ page -->
+    <div class="page-body">
+      <div class="summary-grid">
+        <div class="sum-card" style="position:relative">
+          <div class="tiny">运行中</div>
+          <div class="sum-num" style="color:#f3c3e3">1</div>
+          <div class="tiny" style="margin-top:2px">红薯 15s · 渲染 s3</div>
+          <i class="callout" style="right:-7px;top:-7px">2</i>
+        </div>
+        <div class="sum-card">
+          <div class="tiny">失败</div>
+          <div class="sum-num" style="color:#f09a95">1</div>
+          <div class="tiny" style="margin-top:2px">咖啡 30s · 渲染 s2</div>
+        </div>
+        <div class="sum-card">
+          <div class="tiny">今日已花</div>
+          <div class="sum-num">$0.10</div>
+          <div class="tiny" style="margin-top:2px">预算 $2.00 · 剩余 $1.90</div>
+        </div>
+      </div>
+
+      <div class="task-list">
+        <!-- running -->
+        <div class="task-row" style="position:relative">
+          <div class="task-proj">
+            <div class="ptitle">红薯 · 炭火现烤 15s</div>
+            <div class="pmeta">渲染 · s3 · V3</div>
+          </div>
+          <div class="task-mid">
+            <div class="row" style="gap:8px">
+              <span class="tiny mono" style="width:32px">62%</span>
+              <div class="track" style="flex:1"><i style="width:62%"></i></div>
+              <span class="tiny mono">4.5s / 7.2s</span>
+            </div>
+          </div>
+          <div class="mono tiny" style="width:54px;text-align:right">$0.08</div>
+          <button class="btn sm">取消</button>
+          <i class="callout" style="left:-7px;top:-7px">3</i>
+        </div>
+
+        <!-- failed + expanded -->
+        <div class="task-row fail" style="position:relative">
+          <div class="task-proj">
+            <div class="ptitle">咖啡 · 冷萃 30s</div>
+            <div class="pmeta">渲染 · s2 · V3</div>
+          </div>
+          <div class="task-mid">
+            <div style="font-size:10.5px;color:#f09a95">失败 · 音频流缺失（ffprobe: no audio stream）</div>
+            <div class="tiny" style="margin-top:2px">今天 10:12 · 已重试 1 次</div>
+          </div>
+          <div class="mono tiny" style="width:54px;text-align:right">$0.00</div>
+          <button class="btn sm">重试</button>
+          <button class="btn sm ghost">日志</button>
+          <i class="callout" style="right:-7px;top:-7px">4</i>
+        </div>
+        <div style="padding:8px 12px 10px 12px;background:#170f12;border-bottom:1px solid var(--line-soft)">
+          <div class="tiny mono" style="color:#a08b8e">ffprobe -v error -select_streams a:0 ... → no audio stream</div>
+          <div class="row" style="margin-top:6px;gap:6px">
+            <button class="btn sm">重试</button>
+            <button class="btn sm">打开日志</button>
+            <button class="btn sm ghost">复制错误</button>
+            <div class="spacer"></div>
+            <span class="tiny">输出：renders/v3-s2.mp4 · 1.2 MB</span>
+            <i class="callout" style="right:-7px;top:-7px">5</i>
+          </div>
+        </div>
+
+        <!-- done -->
+        <div class="task-row">
+          <div class="task-proj">
+            <div class="ptitle">露营灯 · 夜景 15s</div>
+            <div class="pmeta">预览 · s5 · V2</div>
+          </div>
+          <div class="task-mid">
+            <div class="tiny" style="color:#8ee6bf">完成 · 12.0s · 输出 8 张关键帧</div>
+          </div>
+          <div class="mono tiny" style="width:54px;text-align:right">$0.02</div>
+          <button class="btn sm ghost">打开成片</button>
+          <button class="btn sm ghost">Finder</button>
+        </div>
+
+        <!-- interrupted -->
+        <div class="task-row">
+          <div class="task-proj">
+            <div class="ptitle">手作皂 · 开箱 30s</div>
+            <div class="pmeta">渲染 · s1 · V1</div>
+          </div>
+          <div class="task-mid">
+            <div class="tiny" style="color:#f0cd83">已中断 · 应用退出时未完成</div>
+          </div>
+          <div class="mono tiny" style="width:54px;text-align:right">$0.00</div>
+          <button class="btn sm">重试</button>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;font-size:9.5px;color:var(--faint)">
+        <span>任务保留 7 天</span>
+        <div class="spacer"></div>
+        <span>打开日志目录</span>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------- bottom -->
+    <div class="dockbar">
+      <span class="dock-item"><span class="ic">▤</span>项目</span>
+      <span class="dock-item"><span class="ic">▣</span>制作</span>
+      <span class="dock-item"><span class="ic">▦</span>资产</span>
+      <span class="dock-item on"><span class="ic">◷</span>任务<span class="num">2</span></span>
+      <div class="spacer"></div>
+      <span class="pill ok"><span class="dot ok"></span>1 运行</span>
+      <span class="pill hot" style="height:22px;font-size:10px"><span class="dot accent"></span>2 待办</span>
+      <span class="icon-btn" style="width:24px;height:24px">⚙</span>
+      <span class="icon-btn" style="width:24px;height:24px">?</span>
+    </div>
+
+  </div>
+
+  <div class="legend" style="height:80px;padding:9px 22px;grid-template-columns:repeat(3,1fr);gap:4px 22px">
+    <div><i>1</i>顶部子 tab：全部 / 运行中 / 失败</div>
+    <div><i>2</i>三个数字：运行中、失败、今日花费</div>
+    <div><i>3</i>运行中：项目 / 镜头 / 进度 / 耗时 / 花费</div>
+    <div><i>4</i>失败：错误原文 + 重试 + 日志</div>
+    <div><i>5</i>错误行可展开，不用跳详情页</div>
+    <div><i>6</i>费用与预算同屏，避免“跑到一半才发现贵”</div>
+  </div>
+</div>
+</body>
+</html>

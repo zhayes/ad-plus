@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3.3 · 分镜</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen" style="height:980px">
+  <div class="app-shell">
+
+    <!-- ------------------------------------------------------------- top -->
+    <div class="topbar min" style="position:relative">
+      <div class="project-chip" style="height:28px">
+        <span class="sq" style="width:16px;height:16px"></span>
+        <span class="nm" style="font-size:11.5px">红薯 · 炭火现烤 15s</span>
+        <span class="cv">V3</span>
+        <span class="st"><span class="dot accent"></span>分镜编辑中</span>
+      </div>
+
+      <div class="sub-tabs" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)">
+        <span class="sub-tab">画布</span>
+        <span class="sub-tab on">分镜</span>
+        <span class="sub-tab">审片</span>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="cta-top" style="position:relative">生成 5 镜 →<i class="callout" style="left:-7px;bottom:-7px">6</i></div>
+    </div>
+
+    <!-- ------------------------------------------------------------ page -->
+    <div class="page-body">
+      <div class="row" style="margin-bottom:10px">
+        <b style="font-size:12.5px">分镜</b><span class="badge">5</span>
+        <span class="tiny">总时长 15.0s / 目标 15.0s</span>
+        <div class="spacer"></div>
+        <span class="tiny">拖拽卡片排序 · 自动重算时间</span>
+      </div>
+
+      <div class="sb-grid">
+        <!-- s1 -->
+        <div class="sb-card">
+          <div class="sb-thumb ph" style="position:relative">
+            <span class="big">s1</span><span>关键帧</span>
+            <span class="badge" style="position:absolute;right:5px;bottom:5px">已生成</span>
+          </div>
+          <div class="sb-info">
+            <div class="row"><span class="sb-drag">⋮⋮</span><b style="font-size:12px">s1</b><span class="badge">hook</span><div class="spacer"></div><span class="badge ok">✓</span></div>
+            <div class="tiny mono">0.0 – 2.2s · 2.2s</div>
+            <div class="tiny" style="line-height:1.55">黑场。红薯呼吸，第 16 帧刀光扫过，切面张开。</div>
+            <div class="tiny">转场 cut · 🔒 已锁</div>
+            <div class="row" style="margin-top:auto;gap:5px">
+              <button class="btn sm">重做</button><button class="btn sm ghost">⋯</button>
+              <div class="spacer"></div><span class="tiny">$0.02</span>
+            </div>
+            <i class="callout" style="left:-7px;top:36px">4</i>
+          </div>
+        </div>
+
+        <!-- s2 with drop line -->
+        <div class="sb-card drop-before">
+          <div class="sb-thumb ph" style="position:relative">
+            <span class="big">s2</span><span>关键帧</span>
+            <span class="badge" style="position:absolute;right:5px;bottom:5px">已生成</span>
+          </div>
+          <div class="sb-info">
+            <div class="row"><span class="sb-drag">⋮⋮</span><b style="font-size:12px">s2</b><span class="badge">build</span><div class="spacer"></div><span class="badge ok">✓</span></div>
+            <div class="tiny mono">2.2 – 5.0s · 2.8s</div>
+            <div class="tiny" style="line-height:1.55">切面变正面全幅，糖丝开始拉长，暖光压上。</div>
+            <div class="tiny">转场 连续推近</div>
+            <div class="row" style="margin-top:auto;gap:5px">
+              <button class="btn sm">重做</button><button class="btn sm ghost">⋯</button>
+              <div class="spacer"></div><span class="tiny">$0.02</span>
+            </div>
+          </div>
+          <i class="callout" style="left:-20px;top:8px">2</i>
+        </div>
+
+        <!-- s3 dragging -->
+        <div class="sb-card drag sel">
+          <div class="sb-thumb ph" style="position:relative">
+            <span class="big">s3</span><span>关键帧</span>
+            <span class="badge warn" style="position:absolute;right:5px;bottom:5px">待改</span>
+          </div>
+          <div class="sb-info">
+            <div class="row"><span class="sb-drag">⋮⋮</span><b style="font-size:12px">s3</b><span class="badge">proof</span><div class="spacer"></div><span class="badge warn">☐</span></div>
+            <div class="tiny mono">5.0 – 9.5s · 4.5s</div>
+            <div class="tiny" style="line-height:1.55">糖丝坠落，温度条与读数同步。当前节奏偏快。</div>
+            <div class="tiny">转场 叠化 → 硬切</div>
+            <div class="row" style="margin-top:auto;gap:5px">
+              <button class="btn sm">重做</button><button class="btn sm ghost">⋯</button>
+              <div class="spacer"></div><span class="tiny">$0.06</span>
+            </div>
+          </div>
+          <i class="callout" style="left:-7px;top:-7px">1</i>
+        </div>
+
+        <!-- s4 selected -->
+        <div class="sb-card sel">
+          <div class="sb-thumb ph" style="position:relative">
+            <span class="big">s4</span><span>关键帧</span>
+            <span class="badge" style="position:absolute;right:5px;bottom:5px">已生成</span>
+          </div>
+          <div class="sb-info">
+            <div class="row"><span class="sb-drag">⋮⋮</span><b style="font-size:12px">s4</b><span class="badge">proof</span><div class="spacer"></div><span class="badge" style="border-color:var(--accent);color:#f3c3e3">✓</span></div>
+            <div class="tiny mono">9.5 – 12.5s · 3.0s</div>
+            <div class="tiny" style="line-height:1.55">「它得烤到滴糖。」字标上浮，三格数据依次出现。</div>
+            <div class="tiny">转场 硬切</div>
+            <div class="row" style="margin-top:auto;gap:5px">
+              <button class="btn sm">重做</button><button class="btn sm ghost">⋯</button>
+              <div class="spacer"></div><span class="tiny">$0.02</span>
+            </div>
+            <i class="callout" style="left:-7px;bottom:6px">5</i>
+          </div>
+        </div>
+
+        <!-- s5 -->
+        <div class="sb-card">
+          <div class="sb-thumb ph" style="position:relative">
+            <span class="big">s5</span><span>关键帧</span>
+            <span class="badge" style="position:absolute;right:5px;bottom:5px">待生成</span>
+          </div>
+          <div class="sb-info">
+            <div class="row"><span class="sb-drag">⋮⋮</span><b style="font-size:12px">s5</b><span class="badge">cta</span><div class="spacer"></div><span class="badge">☐</span></div>
+            <div class="tiny mono">12.5 – 15.0s · 2.5s</div>
+            <div class="tiny" style="line-height:1.55">单行 CTA「今晚来一个」+ logo，落版停留 0.8s。</div>
+            <div class="tiny">转场 淡出</div>
+            <div class="row" style="margin-top:auto;gap:5px">
+              <button class="btn sm">生成</button><button class="btn sm ghost">⋯</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- add -->
+        <div class="sb-add" style="position:relative">
+          <div style="text-align:center">
+            <div style="font-size:22px">＋</div>
+            <div class="tiny" style="margin-top:6px">添加镜头</div>
+            <div class="tiny" style="margin-top:2px">空镜 · 从素材 · 复制现有</div>
+          </div>
+          <i class="callout" style="right:-7px;top:-7px">3</i>
+        </div>
+      </div>
+
+      <!-- timeline -->
+      <div class="row" style="margin-top:16px">
+        <div style="display:flex;flex:1;height:10px;border-radius:4px;overflow:hidden;border:1px solid var(--line)">
+          <div style="flex:2.2;background:#3a2433"></div>
+          <div style="flex:2.8;background:#3a2433"></div>
+          <div style="flex:4.5;background:#1f3a30"></div>
+          <div style="flex:3.0;background:#1f3a30"></div>
+          <div style="flex:2.5;background:#1b2030"></div>
+        </div>
+        <span class="tiny mono" style="margin-left:10px">15.0s</span>
+        <i class="callout" style="position:static;margin-left:6px">6</i>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------- bottom -->
+    <div class="dockbar">
+      <span class="dock-item"><span class="ic">▤</span>项目</span>
+      <span class="dock-item on"><span class="ic">▣</span>制作</span>
+      <span class="dock-item"><span class="ic">▦</span>资产</span>
+      <span class="dock-item"><span class="ic">◷</span>任务<span class="num">2</span></span>
+      <div class="spacer"></div>
+      <span class="pill ok"><span class="dot ok"></span>QA 4/4</span>
+      <span class="pill hot" style="height:22px;font-size:10px"><span class="dot accent"></span>1 待确认</span>
+      <span class="icon-btn" style="width:24px;height:24px">⚙</span>
+      <span class="icon-btn" style="width:24px;height:24px">?</span>
+    </div>
+
+  </div>
+
+  <div class="legend" style="height:80px;padding:9px 22px;grid-template-columns:repeat(3,1fr);gap:4px 22px">
+    <div><i>1</i>拖拽卡片排序，卡片整体可拖</div>
+    <div><i>2</i>插入线显示落点；松手后自动重算每镜起止</div>
+    <div><i>3</i>末尾添加镜头：空镜 / 素材 / 复制现有</div>
+    <div><i>4</i>卡片内直接看时长、role、描述与状态</div>
+    <div><i>5</i>选中卡片后可重做 / 锁定 / 删除（批量 P1）</div>
+    <div><i>6</i>总时长实时校验，超出目标标黄</div>
+  </div>
+</div>
+</body>
+</html>

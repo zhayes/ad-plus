@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ P0 线框 · 索引</title>
+<link rel="stylesheet" href="wireframe.css" />
+<style>
+  .gallery { max-width: 1180px; margin: 0 auto; padding: 40px 24px 64px; }
+  .gallery h1 { font-size: 24px; margin: 0 0 8px; letter-spacing: .3px; }
+  .gallery p.lead { color: var(--dim); font-size: 13px; line-height: 1.7; margin: 0 0 28px; }
+  .item { margin-bottom: 34px; }
+  .item-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .item-head b { font-size: 15px; }
+  .item-head a { margin-left: auto; font-size: 11.5px; color: var(--dim); text-decoration: none; border-bottom: 1px dotted var(--line); }
+  .item img { width: 100%; border: 1px solid var(--line); border-radius: 10px; display: block; }
+  .note { color: var(--faint); font-size: 11.5px; margin-top: 8px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="gallery">
+  <h1>Ad+ P0 线框</h1>
+  <p class="lead">
+    01–03 是 v2 三屏；04–07 是早期；08 是导航方案；09–13 是模块页。低饱和度与虚线表示占位，文字即规格。<br />
+    文档：<a href="../page-specs-v3.md" style="color:#f3c3e3">页面规格 v3.3</a> · <a href="../module-map-v3.md" style="color:#f3c3e3">模块与导航 v3.2</a> · <a href="../entry-map-v3.md" style="color:#f3c3e3">入口地图 v3</a> · <a href="../prd-adplus-v2.md" style="color:#f3c3e3">PRD v2</a>
+  </p>
+
+  <div class="item">
+    <div class="item-head"><b>01 · 项目首页</b><span class="badge">/projects/:id</span>
+      <a href="01-project-home.html">打开 HTML</a></div>
+    <a href="01-project-home.png"><img src="01-project-home.png" alt="项目首页线框" /></a>
+    <div class="note">播放器 + 版本对比、分镜条、按项目隔离的待办、简报、体检、花费。顶栏不再放模型选择。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>02 · 工作台</b><span class="badge">/projects/:id/workspace</span>
+      <a href="02-workspace.html">打开 HTML</a></div>
+    <a href="02-workspace.png"><img src="02-workspace.png" alt="工作台线框" /></a>
+    <div class="note">播放器为主角；选中镜头时右侧显示检查器；分镜条可锁定；聊天退为“导演”侧栏。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>03 · 审批中心</b><span class="badge">/projects/:id/approvals</span>
+      <a href="03-approval.html">打开 HTML</a></div>
+    <a href="03-approval.png"><img src="03-approval.png" alt="审批中心线框" /></a>
+    <div class="note">分镜模式：逐镜通过/打回/锁定，概念与交付内容先于价格，档位切换即改价，倒计时前置。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>04 · 画布（v3 默认态）</b><span class="badge">一屏三态</span>
+      <a href="04-canvas.html">打开 HTML</a></div>
+    <a href="04-canvas.png"><img src="04-canvas.png" alt="画布默认态线框" /></a>
+    <div class="note">无左栏、无右栏、无模型选择器；常驻只有项目状态、模式开关、一个主操作。对话收成 38px Dock。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>05 · 审片（同一画布）</b><span class="badge">Review 态</span>
+      <a href="05-review.html">打开 HTML</a></div>
+    <a href="05-review.png"><img src="05-review.png" alt="审片态线框" /></a>
+    <div class="note">不是新页面，是画布的第三个密度：默认全部通过，只标问题镜；一条决策栏完成批准。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>06 · 命令面板（入口兜底）</b><span class="badge">⌘K</span>
+      <a href="06-command.html">打开 HTML</a></div>
+    <a href="06-command.png"><img src="06-command.png" alt="命令面板线框" /></a>
+    <div class="note">一个框搜项目、动作、素材、设置；每个动作带快捷键。没有常驻入口的功能，全部在这里可搜。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>07 · 底部模块坞（v3.1 早期，已修正）</b><span class="badge">Bottom dock</span>
+      <a href="07-bottom-dock.html">打开 HTML</a></div>
+    <a href="07-bottom-dock.png"><img src="07-bottom-dock.png" alt="底部模块坞线框" /></a>
+    <div class="note">顶栏只剩项目与主操作；模式、模块、状态下沉到底栏；项目面板从左侧空位打开，视频不动。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>08 · 底部主模块 + 顶部子 tab（当前）</b><span class="badge">v3.2</span>
+      <a href="08-bottom-modules.html">打开 HTML</a></div>
+    <a href="08-bottom-modules.png"><img src="08-bottom-modules.png" alt="底部主模块与顶部子 tab 线框" /></a>
+    <div class="note">底部 = 项目 / 制作 / 资产 / 任务；顶部 = 当前项目的子 tab（画布 / 分镜 / 审片）+ 唯一主操作。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>09 · 项目页</b><span class="badge">v3.3</span>
+      <a href="09-projects.html">打开 HTML</a></div>
+    <a href="09-projects.png"><img src="09-projects.png" alt="项目页线框" /></a>
+    <div class="note">作品集：状态筛选、搜索排序、卡片菜单、新建项目；总览用右侧抽屉，不另开页。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>10 · 资产页</b><span class="badge">v3.3</span>
+      <a href="10-assets.html">打开 HTML</a></div>
+    <a href="10-assets.png"><img src="10-assets.png" alt="资产页线框" /></a>
+    <div class="note">素材 / 品牌 / 模板；类型/来源/项目筛选；右侧详情抽屉；复用规则写清可用条件。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>11 · 任务页</b><span class="badge">v3.3</span>
+      <a href="11-tasks.html">打开 HTML</a></div>
+    <a href="11-tasks.png"><img src="11-tasks.png" alt="任务页线框" /></a>
+    <div class="note">运行/失败/完成/中断；失败行就地展开错误、重试、日志；费用与列表一致。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>12 · 分镜（P0 排序 / 增删）</b><span class="badge">v3.3</span>
+      <a href="12-storyboard.html">打开 HTML</a></div>
+    <a href="12-storyboard.png"><img src="12-storyboard.png" alt="分镜页线框" /></a>
+    <div class="note">拖拽排序、插入线、添加镜头、单镜重做/锁定；总时长实时校验。批量（多选）为 P1。</div>
+  </div>
+
+  <div class="item">
+    <div class="item-head"><b>13 · 品牌包（P0）</b><span class="badge">v3.3</span>
+      <a href="13-brand.html">打开 HTML</a></div>
+    <a href="13-brand.png"><img src="13-brand.png" alt="品牌包线框" /></a>
+    <div class="note">品牌列表 + 编辑器 + 品牌检查 + 片头预览；禁用词直接进审片合规。</div>
+  </div>
+</div>
+</body>
+</html>

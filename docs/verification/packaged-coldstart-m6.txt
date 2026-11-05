@@ -1,0 +1,41 @@
+Ad+ P0 packaging / cold start
+=============================
+
+artifact: dist/Ad+.app
+shell: tauri
+size: 6.6M
+binary: dist/Ad+.app/Contents/MacOS/AdPlus (5.7M, 2026-11-05 12:47)
+bundle id: com.adplus.desktop
+version: 0.1.0
+
+cold start (no server running, app spawns its own backend)
+  launch: open -n dist/Ad+.app
+  backend child: .venv/bin/python -u -m app.main --no-window --port 8765 --parent-pid <app pid>
+  /api/health: ok after 2s
+  health: {"ok":true,"app_data":"/Users/chad/Library/Application Support/Ad+","version":"0.1.0"}
+
+native menu (AppleScript / System Events)
+  menu bar items: Apple, Ad+, 文件, 视图, 帮助
+  click 视图 → 任务: accepted
+  frontend effect (when run against an access-log backend):
+    GET /assets/Tasks-fF1-8fMl.js 200
+    GET /api/config 200
+    GET /api/jobs 200
+
+SPA loading (against access-log backend)
+  GET / 200
+  GET /assets/index-DQulVuRc.js 200
+  GET /assets/index-Dvjmlrvz.css 200
+  GET /api/projects 200
+  GET /api/projects 200
+
+deep links after fix (SPA fallback)
+  /projects 200
+  /studio/m6-e2e/review 200
+  /tasks 200
+  /assets 200
+  /chat/legacy-session 200
+
+notes
+  - build script now copies frontend/dist → app/desktop/web before cargo build.
+  - window capture via screencapture was unavailable in this session; menu + requests are the runtime evidence.

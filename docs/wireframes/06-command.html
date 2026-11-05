@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ v3 · 命令面板（入口兜底）</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen compact">
+
+  <!-- ------------------------------------------------------------ top bar -->
+  <div class="topbar min">
+    <div class="project-chip">
+      <span class="sq"></span>
+      <span class="nm">红薯 · 炭火现烤</span>
+      <span class="cv">V3</span>
+      <span class="st"><span class="dot warn"></span>方案待确认</span>
+      <span class="cv">⌄</span>
+    </div>
+
+    <div class="mode-switch" style="position:absolute;left:50%;transform:translateX(-50%)">
+      <span class="on">画布</span><span>分镜</span><span>审片</span>
+    </div>
+
+    <div class="spacer"></div>
+    <span class="pill ok" style="position:relative">
+      <span class="dot ok"></span>QA 4/4
+      <span style="color:#33405a">·</span>
+      <span class="mono" style="font-size:10px">$0.18 / $2.00</span>
+    </span>
+    <span class="pill hot"><span class="dot accent"></span>1 待确认</span>
+    <span class="icon-btn" style="position:relative">⋯<i class="callout" style="right:-7px;bottom:-7px">5</i></span>
+  </div>
+
+  <!-- -------------------------------------------------------------- canvas -->
+  <div class="canvas-area" style="filter:brightness(.5)">
+    <div class="frame-col">
+      <div class="ph video" style="width:340px;height:604px;border-radius:10px">
+        <span class="big">▶</span>
+        <span>9:16 · V3</span>
+        <span style="font-size:10px">1080 × 1920 · 15.0s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------- palette -->
+  <div class="palette-overlay"></div>
+
+  <div class="palette">
+    <div class="palette-input">
+      <span style="color:var(--faint);font-size:14px">⌕</span>
+      <span class="q">搜索项目、动作、素材、设置…</span>
+      <span class="badge">esc</span>
+    </div>
+
+    <div class="palette-body">
+      <div class="cmd-sec">最近项目</div>
+
+      <div class="cmd-row">
+        <span class="ph" style="width:18px;height:28px;flex:0 0 18px;border-radius:3px"></span>
+        <div class="cmd-main">
+          <div class="cmd-title">红薯 · 炭火现烤 15s</div>
+          <div class="cmd-sub">待审分镜 · 抖音 9:16 · 15s</div>
+        </div>
+        <span class="cmd-kbd">当前</span>
+      </div>
+      <div class="cmd-row">
+        <span class="ph" style="width:18px;height:28px;flex:0 0 18px;border-radius:3px"></span>
+        <div class="cmd-main">
+          <div class="cmd-title">咖啡 · 冷萃 30s</div>
+          <div class="cmd-sub">已交付 · 小红书 4:5 · 30s</div>
+        </div>
+        <span class="cmd-kbd">2 天前</span>
+      </div>
+      <div class="cmd-row">
+        <span class="ph" style="width:18px;height:28px;flex:0 0 18px;border-radius:3px"></span>
+        <div class="cmd-main">
+          <div class="cmd-title">露营灯 · 夜景 15s</div>
+          <div class="cmd-sub">生成中 62% · 抖音 9:16 · 15s</div>
+        </div>
+        <span class="cmd-kbd">昨天</span>
+      </div>
+
+      <div class="cmd-sec">动作</div>
+
+      <div class="cmd-row sel">
+        <span class="cmd-ic">▶</span>
+        <div class="cmd-main">
+          <div class="cmd-title">看方案与报价</div>
+          <div class="cmd-sub">1 个待确认 · 5 个镜头 · 预计 $0.24–0.38</div>
+        </div>
+        <span class="cmd-kbd">↵</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">＋</span>
+        <div class="cmd-main"><div class="cmd-title">新建项目</div></div>
+        <span class="cmd-kbd">⌘N</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">⇧</span>
+        <div class="cmd-main"><div class="cmd-title">导入素材</div></div>
+        <span class="cmd-kbd">⇧⌘I</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">↓</span>
+        <div class="cmd-main"><div class="cmd-title">导出成片</div><div class="cmd-sub">上次预设：抖音 1080×1920</div></div>
+        <span class="cmd-kbd">⌘E</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">⚙</span>
+        <div class="cmd-main"><div class="cmd-title">打开设置</div><div class="cmd-sub">模型 · 媒体服务 · 存储 · 通知</div></div>
+        <span class="cmd-kbd">⌘,</span>
+      </div>
+
+      <div class="cmd-sec">视图</div>
+
+      <div class="cmd-row">
+        <span class="cmd-ic">▣</span>
+        <div class="cmd-main"><div class="cmd-title">画布</div></div>
+        <span class="cmd-kbd">⌘1</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">▤</span>
+        <div class="cmd-main"><div class="cmd-title">分镜</div></div>
+        <span class="cmd-kbd">⌘2</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">✓</span>
+        <div class="cmd-main"><div class="cmd-title">审片</div></div>
+        <span class="cmd-kbd">⌘3</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">◎</span>
+        <div class="cmd-main"><div class="cmd-title">专注模式</div><div class="cmd-sub">隐藏除主操作外的所有控件</div></div>
+        <span class="cmd-kbd">F</span>
+      </div>
+
+      <div class="cmd-sec">帮助</div>
+
+      <div class="cmd-row">
+        <span class="cmd-ic">⌨</span>
+        <div class="cmd-main"><div class="cmd-title">键盘快捷键</div></div>
+        <span class="cmd-kbd">⌘/</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">⚕</span>
+        <div class="cmd-main"><div class="cmd-title">诊断与日志</div><div class="cmd-sub">后端 · 渲染 · 钥匙串 · 打开日志</div></div>
+        <span class="cmd-kbd">—</span>
+      </div>
+      <div class="cmd-row">
+        <span class="cmd-ic">↻</span>
+        <div class="cmd-main"><div class="cmd-title">检查更新</div><div class="cmd-sub">当前 0.1.0</div></div>
+        <span class="cmd-kbd">—</span>
+      </div>
+    </div>
+
+    <div class="palette-foot">
+      <span>↑↓ 移动</span><span>↵ 执行</span><span>esc 关闭</span>
+      <span class="spacer"></span>
+      <span><b style="color:var(--dim)">&gt;</b> 只搜动作</span>
+      <span><b style="color:var(--dim)">@</b> 只搜素材</span>
+    </div>
+  </div>
+
+  <!-- annotations -->
+  <i class="callout" style="left:388px;top:66px">1</i>
+  <i class="callout" style="left:388px;top:142px">2</i>
+  <i class="callout" style="left:1052px;top:292px">3</i>
+  <i class="callout" style="left:388px;top:772px">4</i>
+
+  <!-- -------------------------------------------------------------- legend -->
+  <div class="legend" style="height:64px;padding:8px 22px;grid-template-columns:repeat(3,1fr);gap:3px 22px">
+    <div><i>1</i>一个输入框搜项目、动作、素材、设置</div>
+    <div><i>2</i>最近项目直接打开，不用回首页</div>
+    <div><i>3</i>每个动作带快捷键；不可用会写明原因</div>
+    <div><i>4</i><code>&gt;</code> 只搜动作、<code>@</code> 只搜素材，<code>esc</code> 回画布</div>
+    <div><i>5</i>顶部 <code>⋯</code> 是备用入口：设置 / 快捷键 / 更新 / 退出</div>
+  </div>
+</div>
+</body>
+</html>

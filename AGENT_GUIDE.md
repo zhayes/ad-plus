@@ -1,0 +1,1 @@
+vendor/openmontage/AGENT_GUIDE.md

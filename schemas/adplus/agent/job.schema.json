@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ad+ background job",
+  "type": "object",
+  "required": ["id", "project_id", "kind", "status", "started_at"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "kind": {"enum": ["render", "preview", "tool"]},
+    "status": {"enum": ["running", "done", "failed", "cancelled", "interrupted"]},
+    "progress": {"type": "number", "minimum": 0, "maximum": 1},
+    "frames_done": {"type": "integer", "minimum": 0},
+    "frames_total": {"type": "integer", "minimum": 0},
+    "started_at": {"type": "string"},
+    "finished_at": {"type": ["string", "null"]},
+    "pid": {"type": ["integer", "null"]},
+    "output": {"type": ["string", "null"]},
+    "error": {"type": ["string", "null"]},
+    "cancel_requested": {"type": "boolean"},
+    "log_tail": {"type": "array", "items": {"type": "string"}}
+  }
+}

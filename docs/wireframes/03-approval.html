@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>Ad+ · 审批中心线框</title>
+<link rel="stylesheet" href="wireframe.css" />
+</head>
+<body>
+<div class="screen">
+
+  <!-- ------------------------------------------------------------ top bar -->
+  <div class="topbar">
+    <div class="back">←</div>
+    <div style="font-size:13.5px;font-weight:650">分镜确认 · 红薯 · 炭火现烤 15s</div>
+    <span class="chip solid">V3</span>
+    <span class="chip">9:16</span>
+    <span class="chip">15s</span>
+    <span class="chip">5 镜</span>
+    <div class="spacer"></div>
+    <span style="position:relative">
+      <span class="badge warn" style="font-size:11px;padding:4px 9px">⚠ 剩 12:34 自动超时</span>
+      <i class="callout" style="left:-8px;top:-8px">6</i>
+    </span>
+    <div class="icon-btn">✕</div>
+  </div>
+
+  <div class="body" style="height:846px;padding:16px 20px;gap:16px">
+
+    <!-- ------------------------------------------------------------- left -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:12px">
+      <div class="row">
+        <b style="font-size:13px">分镜</b>
+        <span class="badge">5</span>
+        <span class="tiny">逐镜通过后，只有未锁定的镜头会生成付费素材</span>
+        <div class="spacer"></div>
+        <button class="btn sm ghost">全选通过</button>
+        <button class="btn sm ghost">全不选</button>
+        <i class="callout" style="position:static;margin-left:2px">1</i>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+
+        <!-- shot 1 -->
+        <div class="card" style="border-color:#2c4a3d;background:linear-gradient(180deg,#0f1a17,#10131b)">
+          <div class="card-body" style="padding:10px;display:flex;gap:10px">
+            <div class="ph" style="width:140px;height:250px;flex:0 0 140px">
+              <span class="big">s1</span><span>关键帧</span><span style="font-size:9px">黑场 / 刀光</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="row"><b style="font-size:12px">s1</b><span class="badge">hook</span><span class="spacer"></span><span class="badge ok">✓ 已锁</span></div>
+              <div class="tiny mono">0.0 – 2.2s</div>
+              <div style="font-size:11px;line-height:1.55;color:var(--dim)">黑场。红薯立在中央缓慢呼吸；第 16 帧刀光扫过，切面张开。</div>
+              <div class="tiny">转场：cut（首帧即画面）</div>
+              <div class="row" style="margin-top:auto;gap:5px">
+                <button class="btn sm" style="border-color:#2c4a3d;color:#8ee6bf">✓ 通过</button>
+                <button class="btn sm ghost">打回</button>
+              </div>
+            </div>
+          </div>
+          <i class="callout" style="left:-7px;top:-7px">2</i>
+        </div>
+
+        <!-- shot 2 -->
+        <div class="card" style="border-color:#2c4a3d;background:linear-gradient(180deg,#0f1a17,#10131b)">
+          <div class="card-body" style="padding:10px;display:flex;gap:10px">
+            <div class="ph" style="width:140px;height:250px;flex:0 0 140px">
+              <span class="big">s2</span><span>关键帧</span><span style="font-size:9px">横切面</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="row"><b style="font-size:12px">s2</b><span class="badge">build</span><span class="spacer"></span><span class="badge ok">✓ 已锁</span></div>
+              <div class="tiny mono">2.2 – 5.0s</div>
+              <div style="font-size:11px;line-height:1.55;color:var(--dim)">切面变成正面全幅，糖丝开始拉长，暖光压上。</div>
+              <div class="tiny">转场：连续推近</div>
+              <div class="row" style="margin-top:auto;gap:5px">
+                <button class="btn sm" style="border-color:#2c4a3d;color:#8ee6bf">✓ 通过</button>
+                <button class="btn sm ghost">打回</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- shot 3 -->
+        <div class="card" style="border-color:var(--accent);box-shadow:0 0 0 2px rgba(224,51,138,.16);background:linear-gradient(180deg,#1a1220,#10131b)">
+          <div class="card-body" style="padding:10px;display:flex;gap:10px">
+            <div class="ph" style="width:140px;height:250px;flex:0 0 140px">
+              <span class="big">s3</span><span>关键帧</span><span style="font-size:9px">糖丝锥度</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="row"><b style="font-size:12px">s3</b><span class="badge">proof</span><span class="spacer"></span><span class="badge warn">待定</span></div>
+              <div class="tiny mono">5.0 – 9.5s</div>
+              <div style="font-size:11px;line-height:1.55;color:var(--dim)">糖丝坠落，温度条与读数同步。当前节奏偏快。</div>
+              <div class="tiny">转场：叠化 → 硬切</div>
+              <div class="row" style="margin-top:auto;gap:5px">
+                <button class="btn primary sm">✓ 通过</button>
+                <button class="btn sm" style="border-color:#4a2a3d;color:#f3c3e3">打回</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- shot 4 -->
+        <div class="card">
+          <div class="card-body" style="padding:10px;display:flex;gap:10px">
+            <div class="ph" style="width:140px;height:250px;flex:0 0 140px">
+              <span class="big">s4</span><span>关键帧</span><span style="font-size:9px">字标 / 数据</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="row"><b style="font-size:12px">s4</b><span class="badge">proof</span><span class="spacer"></span><span class="badge">未选</span></div>
+              <div class="tiny mono">9.5 – 12.5s</div>
+              <div style="font-size:11px;line-height:1.55;color:var(--dim)">「它得烤到滴糖。」字标上浮，三格数据依次出现。</div>
+              <div class="tiny">转场：硬切</div>
+              <div class="row" style="margin-top:auto;gap:5px">
+                <button class="btn sm">✓ 通过</button>
+                <button class="btn sm ghost">打回</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- shot 5 -->
+        <div class="card">
+          <div class="card-body" style="padding:10px;display:flex;gap:10px">
+            <div class="ph" style="width:140px;height:250px;flex:0 0 140px">
+              <span class="big">s5</span><span>关键帧</span><span style="font-size:9px">CTA</span>
+            </div>
+            <div style="min-width:0;display:flex;flex-direction:column;gap:5px">
+              <div class="row"><b style="font-size:12px">s5</b><span class="badge">cta</span><span class="spacer"></span><span class="badge">未选</span></div>
+              <div class="tiny mono">12.5 – 15.0s</div>
+              <div style="font-size:11px;line-height:1.55;color:var(--dim)">单行 CTA「今晚来一个」+ logo，落版停留 0.8s。</div>
+              <div class="tiny">转场：淡出</div>
+              <div class="row" style="margin-top:auto;gap:5px">
+                <button class="btn sm">✓ 通过</button>
+                <button class="btn sm ghost">打回</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- add shot -->
+        <div class="card" style="grid-column:auto;border-style:dashed;background:transparent;min-height:270px;display:grid;place-items:center">
+          <div style="text-align:center;color:var(--faint)">
+            <div style="font-size:22px;line-height:1">＋</div>
+            <div class="tiny" style="margin-top:8px">添加镜头<br />或从素材库选</div>
+          </div>
+        </div>
+
+        <!-- overview -->
+        <div class="card" style="grid-column:1 / -1;background:#0c1018">
+          <div class="card-head" style="padding:8px 12px"><span>本版总览</span><div class="spacer"></div><span class="tiny">2 通过 · 1 待定 · 2 未选</span></div>
+          <div class="card-body" style="padding:10px 12px;display:grid;grid-template-columns:1.4fr 1fr;gap:22px">
+            <div>
+              <div style="display:flex;height:24px;border-radius:5px;overflow:hidden;border:1px solid var(--line)">
+                <div style="flex:2.2;background:#1f3a30"></div>
+                <div style="flex:2.8;background:#1f3a30"></div>
+                <div style="flex:4.5;background:#3a2433"></div>
+                <div style="flex:3.0;background:#1b2030"></div>
+                <div style="flex:2.5;background:#1b2030"></div>
+              </div>
+              <div class="tiny mono" style="display:flex;justify-content:space-between;margin-top:5px">
+                <span>0.0</span><span>2.2</span><span>5.0</span><span>9.5</span><span>12.5</span><span>15.0s</span>
+              </div>
+              <div class="tiny" style="margin-top:8px">绿色 = 已通过并锁定，粉色 = 待定，灰色 = 未选。通过后仍可在工作台逐镜返工。</div>
+            </div>
+            <div>
+              <div class="kv"><span class="dot ok"></span>总时长 15.0s · 5 镜</div>
+              <div class="kv"><span class="dot ok"></span>字幕安全区 ✓</div>
+              <div class="kv"><span class="dot warn"></span>音量 -13.2 LUFS（目标 -14）</div>
+              <div class="kv"><span class="dot ok"></span>合规：无绝对化用语</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ------------------------------------------------------------ right -->
+    <aside style="width:400px;flex:0 0 400px;border-left:1px solid var(--line-soft);padding-left:16px;display:flex;flex-direction:column;gap:10px">
+
+      <div class="row">
+        <b style="font-size:13px">方案确认</b>
+        <span class="badge">step 2 / 2</span>
+        <div class="spacer"></div>
+        <span class="tiny">报价已通过</span>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="padding:8px 11px"><span>创意概念</span><span class="spacer"></span><span class="badge">15s</span></div>
+        <div class="card-body" style="padding:9px 11px">
+          <div style="font-size:13px;line-height:1.6">一刀切开，糖丝拉长 —— 把“流糖”拍成证据。</div>
+          <div class="tiny" style="margin-top:5px">调性：烟火气 · 治愈 · 街头夜宵</div>
+        </div>
+        <i class="callout" style="right:-7px;top:-7px">3</i>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="padding:8px 11px"><span>交付内容</span></div>
+        <div class="card-body" style="padding:9px 11px">
+          <div class="kv"><span>规格</span><span class="v">1080×1920 · 30fps</span></div>
+          <div class="kv"><span>镜头</span><span class="v">5 个 · 15.0s</span></div>
+          <div class="kv"><span>包含</span><span class="v">字幕 · 配乐 · 封面</span></div>
+          <div class="kv"><span>平台</span><span class="v">抖音 · 9:16</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="padding:8px 11px"><span>质量档位</span><span class="spacer"></span><span class="tiny">切换即改价</span></div>
+        <div class="card-body" style="padding:9px 11px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div class="chip" style="height:44px;flex-direction:column;gap:2px;justify-content:center;align-items:flex-start">
+              <b style="font-size:11px;color:var(--text)">草稿</b><span class="tiny">本地动效 · $0</span>
+            </div>
+            <div class="chip on" style="height:44px;flex-direction:column;gap:2px;justify-content:center;align-items:flex-start">
+              <b style="font-size:11px">标准</b><span class="tiny" style="color:#c99ab6">图生 · $0.24 起</span>
+            </div>
+            <div class="chip" style="height:44px;flex-direction:column;gap:2px;justify-content:center;align-items:flex-start">
+              <b style="font-size:11px;color:var(--text)">精修</b><span class="tiny">视频模型 · $0.9+</span>
+            </div>
+          </div>
+          <div class="tiny" style="margin-top:7px">免费档：本地动效，适合先看节奏；标准档：AI 实拍感画面。</div>
+        </div>
+        <i class="callout" style="right:-7px;bottom:-7px">4</i>
+      </div>
+
+      <div class="card">
+        <div class="card-head" style="padding:8px 11px"><span>花费</span><div class="spacer"></div><span class="mono tiny">$0.18 / $2.00</span></div>
+        <div class="card-body" style="padding:9px 11px">
+          <div class="track" style="height:5px"><i style="width:9%"></i></div>
+          <div class="row" style="margin-top:7px;font-size:11.5px">
+            <span class="tiny">本次再花</span><div class="spacer"></div><span class="mono">$0.24 – $0.38</span>
+          </div>
+          <div class="row" style="margin-top:3px;font-size:11.5px">
+            <span class="tiny">未锁定镜头</span><div class="spacer"></div><span class="mono">3 个</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-color:#33212d">
+        <div class="card-head" style="padding:8px 11px"><span>打回原因</span><span class="spacer"></span><span class="tiny">点「打回并说明」后生效</span></div>
+        <div class="card-body" style="padding:9px 11px">
+          <div class="row" style="flex-wrap:wrap;gap:5px">
+            <span class="chip on" style="height:24px">镜头太快</span>
+            <span class="chip" style="height:24px">风格不对</span>
+            <span class="chip" style="height:24px">文案要改</span>
+            <span class="chip" style="height:24px">太贵</span>
+            <span class="chip" style="height:24px">时长不对</span>
+          </div>
+          <div class="ph" style="height:38px;margin-top:6px;justify-content:flex-start;padding:0 8px;align-items:flex-start;color:var(--faint);font-size:10.5px">
+            补充说明（可选）：例如“s3 的切面再慢 6 帧”
+          </div>
+        </div>
+        <i class="callout" style="left:-7px;top:-7px">5</i>
+      </div>
+
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px">
+        <button class="btn primary block" style="height:36px">通过并生成未锁定镜头（3）</button>
+        <div class="row">
+          <button class="btn block" style="flex:1">打回并说明</button>
+          <button class="btn ghost block" style="flex:0 0 84px">稍后</button>
+        </div>
+        <div class="tiny" style="text-align:center">通过后仍可在工作台逐镜返工</div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ------------------------------------------------------------- legend -->
+  <div class="legend">
+    <div><i>1</i>全屏分镜，不再用 132px 小图做批准依据</div>
+    <div><i>2</i>逐镜通过 / 锁定；未通过的不生成付费素材</div>
+    <div><i>3</i>概念与交付内容先于价格，先看创意再谈钱</div>
+    <div><i>4</i>档位切换即改价，讲清“免费档到底什么样”</div>
+    <div><i>5</i>打回必须选原因并可定位镜头，意见可执行</div>
+    <div><i>6</i>倒计时前置；超时自动置 timeout，不再静默阻塞</div>
+  </div>
+</div>
+</body>
+</html>

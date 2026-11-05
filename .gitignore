@@ -1,0 +1,45 @@
+# workspace
+.venv/
+.venv-wan/
+dist/
+node_modules/
+
+# user data
+/projects/
+/brands/
+/uploads/
+/output/
+/music_library/
+/.cache/
+/.backlot/
+
+# frontend build
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# rust shell
+app/desktop/target/
+# tauri regenerates these at compile time
+app/desktop/gen/schemas/
+# SPA build copied in by scripts/build_app.sh
+app/desktop/web/
+
+# python
+__pycache__/
+*.pyc
+
+# test / lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.tsbuildinfo
+
+# macOS
+.DS_Store
+
+# The vendored upstream keeps its own .git; the outer repo tracks it as a
+# submodule commit, so nothing here needs ignoring.

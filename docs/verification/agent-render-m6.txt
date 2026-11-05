@@ -1,0 +1,37 @@
+Ad+ M6 agent → MCP → render → review → export
+=============================================
+
+agent runtime: Pi 1.5.0, provider=deepseek, model=deepseek-flash
+MCP: openmontage (connected, direct exposure)
+prompt transport: app /ws/chat (same path as the UI)
+
+read-only smoke
+  tool: mcp__openmontage__om_capabilities
+  answer: 是的，渲染可用（ffmpeg、Remotion 和 HyperFrames 均已就绪）。
+
+render
+  tool: mcp__openmontage__om_render
+  args: project_id=vertical-ad-15s, composition=FlowSugarAd, wait=true
+  job: j_20261105_125555_1eef2b
+  status: done
+  progress: 1.0 (450/450 frames), elapsed 71s
+  output: projects/vertical-ad-15s/renders/m6-agent.mp4
+  probe: h264 1080x1920 @30 + aac, 15.061s, 2,526,361 bytes
+
+review + export
+  copied project: projects/m6-e2e
+  review: approved (final_review=pass; qa has notes)
+  project status: delivered
+  export: preset=douyin_1080, filename=m6-e2e
+  deliverable: projects/m6-e2e/deliverables/m6-e2e.mp4
+  deliverable probe: h264 1080x1920 + aac, 15.061s, 2,123,470 bytes
+
+fixes exposed by this run
+  - MCP wrote jobs to missing lib.jobs; unified with adplus.jobs so the Tasks page sees render jobs.
+  - om_render resolved relative output/public-dir against the composer cwd; now absolute.
+  - SPA deep links /projects /studio /tasks /assets now serve index.html.
+
+cleanup
+  - m6-e2e project deleted
+  - m6-agent.mp4 and its jobs removed from vertical-ad-15s
+  - original 15s render + original job retained
