@@ -121,7 +121,7 @@ export default function ProjectOverview(props: Props) {
   return (
     <Show when={props.projectId}>
       <div class="fixed inset-0 z-40" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={props.onClose} />
+        <div class="absolute inset-0 bg-black/30 sm:bg-transparent" onClick={props.onClose} />
         <aside class="absolute right-0 top-0 flex h-full w-[min(420px,calc(100vw-16px))] flex-col border-l border-line-soft bg-surface shadow-2xl">
           <div class="flex h-11 shrink-0 items-center gap-2 border-b border-line-soft px-3">
             <span class="text-[12px] font-semibold">项目总览</span>

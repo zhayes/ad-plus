@@ -54,7 +54,7 @@ export default function Composer(props: Props) {
   return (
     <div class="shrink-0 px-4 pb-3">
       <div class="mx-auto w-full max-w-[760px]">
-        <div class="flex items-end gap-2 rounded-xl border border-line bg-surface px-3 py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-[#3a3f55] focus-within:shadow-[0_0_0_3px_rgba(224,51,138,0.10)]">
+        <div class="flex items-end gap-2 rounded-xl border border-line bg-surface px-3 py-2">
           <button
             class="mb-1 grid h-7 w-7 shrink-0 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-text"
             title="上传素材（或拖进窗口）"
@@ -79,6 +79,7 @@ export default function Composer(props: Props) {
             onSubmit={send}
             placeholder="描述你要的广告，或直接说“再快一点 / 换个配色 / 加一版横屏”"
             class="pb-1"
+            style={{ outline: "none" }}
           />
 
           <Show

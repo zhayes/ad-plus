@@ -25,6 +25,12 @@ export default function StageInspector(props: Props) {
         <div class="mt-2 border-t border-line-soft pt-2">
           <div class="text-[9.5px] text-faint">产物</div>
           <div class="mt-0.5 truncate font-mono text-[9.5px] text-dim">{props.stage.artifact || "—"}</div>
+          <Show when={props.stage.canonical_stage}>
+            <div class="mt-0.5 text-[9px] text-faint">OpenMontage · {props.stage.canonical_stage} → {props.stage.canonical_artifact || "—"}</div>
+            <Show when={props.stage.checkpoint_status}>
+              <div class="mt-0.5 text-[9px] text-faint">checkpoint · {props.stage.checkpoint_status}</div>
+            </Show>
+          </Show>
         </div>
         <div class="mt-2 text-[10.5px] text-dim">下一步：{props.stage.action}</div>
       </div>

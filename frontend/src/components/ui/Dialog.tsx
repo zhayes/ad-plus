@@ -15,7 +15,7 @@ export default function Dialog(props: Props) {
       <KDialog.Portal>
         <KDialog.Overlay class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
         <div class="fixed inset-0 z-50 grid place-items-center p-6">
-          <KDialog.Content class="w-full max-w-3xl rounded-xl border border-line-soft bg-surface p-4 shadow-2xl outline-none">
+          <KDialog.Content class="max-h-[calc(100vh-48px)] w-full max-w-3xl overflow-y-auto rounded-xl border border-line-soft bg-surface p-4 shadow-2xl outline-none">
             <div class="mb-2 flex items-center gap-2">
               <KDialog.Title class="text-[13px] font-semibold text-text">{props.title}</KDialog.Title>
               <KDialog.CloseButton class="ml-auto rounded-md px-2 py-1 text-[11px] text-faint outline-none hover:text-text focus-visible:ring-1 focus-visible:ring-accent/60">

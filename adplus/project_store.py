@@ -43,6 +43,10 @@ PROJECT_STATUSES = (
 VERSION_STATUSES = ("draft", "producing", "review", "approved", "superseded")
 SHOT_ROLES = ("hook", "build", "proof", "cta")
 SHOT_STATUSES = ("planned", "generating", "ready", "approved", "needs_rework")
+PRODUCTION_METHODS = (
+    "source_video", "image_to_video", "reference_to_video", "avatar",
+    "lip_sync", "motion_graphic", "still_plate", "product_composite",
+)
 
 _ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 
@@ -140,6 +144,9 @@ def _normalise_project(data: dict[str, Any], project_id: str) -> dict[str, Any]:
     project.setdefault("duration_s", 15)
     project.setdefault("quality_tier", "standard")
     project.setdefault("brand_id", None)
+    project.setdefault("persona_id", None)
+    project.setdefault("format_id", None)
+    project.setdefault("product_id", None)
     project.setdefault("brief", {})
     project.setdefault("current_version_id", None)
     project.setdefault("cover", None)
@@ -196,6 +203,9 @@ def create_project(
         "duration_s": float(fields.get("duration_s") or 15),
         "quality_tier": fields.get("quality_tier") or "standard",
         "brand_id": fields.get("brand_id"),
+        "persona_id": fields.get("persona_id"),
+        "product_id": fields.get("product_id"),
+        "format_id": fields.get("format_id"),
         "route": copy.deepcopy(fields.get("route")),
         "brief": copy.deepcopy(fields.get("brief") or {}),
         "current_version_id": None,
@@ -212,7 +222,7 @@ def update_project(project_id: str, fields: dict[str, Any]) -> dict[str, Any]:
         raise FileNotFoundError(project_id)
     allowed = {
         "title", "status", "platform", "aspect", "duration_s", "quality_tier",
-        "brand_id", "brief", "current_version_id", "pipeline_type", "cover", "route",
+        "brand_id", "persona_id", "product_id", "format_id", "brief", "current_version_id", "pipeline_type", "cover", "route",
     }
     unknown = set(fields) - allowed
     if unknown:
@@ -403,12 +413,32 @@ def save_version(version: dict[str, Any]) -> dict[str, Any]:
     return version
 
 
+def normalise_shot(raw: dict[str, Any]) -> dict[str, Any]:
+    """Additive shot contract; old versions stay readable.
+
+    ``production_method`` is the bridge between the storyboard and the model
+    registry.  ``asset_refs`` binds a shot to a presenter/product asset instead
+    of relying on a prompt to guess which image is which.
+    """
+    shot = copy.deepcopy(raw)
+    method = str(shot.get("production_method") or "source_video")
+    shot["production_method"] = method if method in PRODUCTION_METHODS else "source_video"
+    for key in ("shot_language", "asset_refs", "generation_spec", "timeline"):
+        value = shot.get(key)
+        shot[key] = value if isinstance(value, dict) else {}
+    if shot.get("persona_id") is not None:
+        shot["persona_id"] = str(shot.get("persona_id"))
+    if shot.get("product_id") is not None:
+        shot["product_id"] = str(shot.get("product_id"))
+    return shot
+
+
 def recompute_timeline(shots: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Keep each shot's duration, rebuild index/start/end in array order."""
     out: list[dict[str, Any]] = []
     cursor = 0.0
     for index, raw in enumerate(shots, start=1):
-        shot = copy.deepcopy(raw)
+        shot = normalise_shot(raw)
         duration = shot.get("duration_s")
         if duration is None:
             duration = float(shot.get("end_s") or 0) - float(shot.get("start_s") or 0)
@@ -615,7 +645,16 @@ def add_shot(
         "take_count": 0,
         "cost_usd": 0,
         "duration_s": float(fields.get("duration_s") or 2.5),
+        "production_method": fields.get("production_method") or "source_video",
+        "shot_language": copy.deepcopy(fields.get("shot_language") or {}),
+        "asset_refs": copy.deepcopy(fields.get("asset_refs") or {}),
+        "generation_spec": copy.deepcopy(fields.get("generation_spec") or {}),
+        "timeline": copy.deepcopy(fields.get("timeline") or {}),
+        "persona_id": fields.get("persona_id"),
+        "product_id": fields.get("product_id"),
+        "format_id": fields.get("format_id"),
     }
+    shot = normalise_shot(shot)
     if after_id:
         index = next((i for i, s in enumerate(shots) if str(s.get("id")) == after_id), None)
         if index is None:
@@ -643,7 +682,8 @@ def update_shot(
     allowed = {
         "role", "description", "framing", "movement", "transition_in", "transition_out",
         "on_screen_text", "narration", "status", "locked", "preview", "duration_s",
-        "take_count", "cost_usd",
+        "take_count", "cost_usd", "production_method", "shot_language",
+        "asset_refs", "generation_spec", "timeline", "persona_id", "product_id",
     }
     unknown = set(fields) - allowed
     if unknown:
@@ -652,6 +692,8 @@ def update_shot(
         raise ValueError(f"role must be one of {SHOT_ROLES}")
     if "status" in fields and fields["status"] not in SHOT_STATUSES:
         raise ValueError(f"status must be one of {SHOT_STATUSES}")
+    if "production_method" in fields and fields["production_method"] not in PRODUCTION_METHODS:
+        raise ValueError(f"production_method must be one of {PRODUCTION_METHODS}")
     shot = copy.deepcopy(shots[index])
     shot.update(copy.deepcopy(fields))
     if "duration_s" in fields:
@@ -1112,3 +1154,18 @@ def restore_project(token: str) -> dict[str, Any]:
     if project is None:
         raise FileNotFoundError(project_id)
     return project
+
+
+def persona_snapshot(persona_id: str | None) -> dict[str, Any] | None:
+    """Project-facing view of a reusable persona; avoids a hard import cycle."""
+    if not persona_id:
+        return None
+    from adplus import personas
+    return personas.persona_snapshot(persona_id)
+
+
+def product_snapshot(product_id: str | None) -> dict[str, Any] | None:
+    if not product_id:
+        return None
+    from adplus import products
+    return products.product_snapshot(product_id)

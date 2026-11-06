@@ -29,6 +29,18 @@ from pydantic import BaseModel
 import adplus
 from adplus import assets as asset_store
 from adplus import project_store
+from adplus import personas as persona_store
+from adplus import persona_generator
+from adplus import products as product_store
+from adplus import digital_human
+from adplus import product_composite
+from adplus import canonical_artifacts
+from adplus import request_probe
+from adplus import pipeline_runner
+from adplus import local_tools
+from adplus import oms_tools
+from adplus import formats
+from adplus import capabilities as model_caps
 from app import capabilities, config_store, env_utils, pi_bridge, secrets_store
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -45,6 +57,8 @@ def _warm_registry() -> None:
     """
     def warm() -> None:
         try:
+            oms_tools.register()
+            local_tools.ensure_local_tools()
             capabilities.apply_secrets_to_env()
             capabilities.matrix()
         except Exception:
@@ -395,6 +409,10 @@ class ProjectCreatePayload(BaseModel):
     duration_s: float = 15
     quality_tier: str = "standard"
     pipeline_type: str = "cinematic"
+    persona_id: str | None = None
+    product_id: str | None = None
+    format_id: str | None = None
+    route: dict[str, Any] | None = None
 
 
 class ProjectPatchPayload(BaseModel):
@@ -405,6 +423,9 @@ class ProjectPatchPayload(BaseModel):
     duration_s: float | None = None
     quality_tier: str | None = None
     brand_id: str | None = None
+    persona_id: str | None = None
+    product_id: str | None = None
+    format_id: str | None = None
     brief: dict[str, Any] | None = None
     current_version_id: str | None = None
     pipeline_type: str | None = None
@@ -443,6 +464,13 @@ class ShotCreatePayload(BaseModel):
     narration: str = ""
     status: str = "planned"
     preview: str | None = None
+    production_method: str | None = None
+    shot_language: dict[str, Any] | None = None
+    asset_refs: dict[str, Any] | None = None
+    generation_spec: dict[str, Any] | None = None
+    timeline: dict[str, Any] | None = None
+    persona_id: str | None = None
+    product_id: str | None = None
 
 
 class ShotPatchPayload(BaseModel):
@@ -460,6 +488,106 @@ class ShotPatchPayload(BaseModel):
     duration_s: float | None = None
     take_count: int | None = None
     cost_usd: float | None = None
+    production_method: str | None = None
+    shot_language: dict[str, Any] | None = None
+    asset_refs: dict[str, Any] | None = None
+    generation_spec: dict[str, Any] | None = None
+    timeline: dict[str, Any] | None = None
+    persona_id: str | None = None
+    product_id: str | None = None
+
+
+class PersonaPayload(BaseModel):
+    name: str | None = None
+    kind: str | None = None
+    status: str | None = None
+    source_path: str | None = None
+    preview_path: str | None = None
+    asset_paths: list[str] | None = None
+    description: str | None = None
+    gender: str | None = None
+    age_range: str | None = None
+    look: str | None = None
+    wardrobe: str | None = None
+    scene: str | None = None
+    tags: list[str] | None = None
+    voice: dict[str, Any] | None = None
+    rights: dict[str, Any] | None = None
+    providers: dict[str, Any] | None = None
+
+
+class PersonaGeneratePayload(BaseModel):
+    prompt: str = ""
+    count: int = 4
+    aspect_ratio: str = "3:4"
+    reference_path: str | None = None
+    model: str = "image-01"
+
+
+class DigitalHumanPayload(BaseModel):
+    shot_id: str
+    version_id: str | None = None
+    profile_id: str = "kling-avatar"
+    persona_id: str | None = None
+    product_id: str | None = None
+    audio_path: str | None = None
+    video_path: str | None = None
+    prompt: str | None = None
+
+
+class PipelineBootstrapPayload(BaseModel):
+    version_id: str | None = None
+    approve: bool = True
+
+
+class PipelineCompletePayload(BaseModel):
+    version_id: str
+    render_path: str
+    product_id: str | None = None
+    approve: bool = True
+
+
+class PipelineAssetsPayload(BaseModel):
+    shot_id: str
+    version_id: str | None = None
+    profile_id: str = "kling-avatar"
+    persona_id: str | None = None
+    product_id: str | None = None
+    audio_path: str | None = None
+    execute: bool = False
+
+
+class RequestProbePayload(BaseModel):
+    profile_id: str
+    inputs: dict[str, Any]
+
+
+class CanonicalSyncPayload(BaseModel):
+    version_id: str | None = None
+
+
+class ProductCompositePayload(BaseModel):
+    shot_id: str
+    version_id: str | None = None
+    product_id: str | None = None
+    base_video_path: str | None = None
+    start_s: float = 2.0
+    end_s: float = 8.0
+    position: str = "bottom_left"
+
+
+class ProductPayload(BaseModel):
+    name: str | None = None
+    sku: str | None = None
+    brand: str | None = None
+    label_text: str | None = None
+    category: str | None = None
+    hero_path: str | None = None
+    detail_paths: list[str] | None = None
+    tags: list[str] | None = None
+    status: str | None = None
+    locked: bool | None = None
+    rights: dict[str, Any] | None = None
 
 
 class BrandPayload(BaseModel):
@@ -890,6 +1018,163 @@ def delete_asset(asset_id: str) -> dict[str, Any]:
     if not removed:
         raise HTTPException(status_code=404, detail="asset not found")
     return {"removed": True}
+
+
+@app.get("/api/personas")
+def list_personas(include_archived: bool = False) -> dict[str, Any]:
+    return {"personas": persona_store.list_personas(include_archived=include_archived)}
+
+
+@app.post("/api/personas")
+def create_persona(payload: PersonaPayload) -> dict[str, Any]:
+    try:
+        persona = persona_store.save_persona(payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"persona": persona}
+
+
+@app.post("/api/personas/generate")
+def generate_persona_candidates(payload: PersonaGeneratePayload) -> dict[str, Any]:
+    reference = payload.reference_path
+    if reference:
+        target = (Path(__file__).resolve().parent.parent / reference).resolve()
+        uploads = adplus.paths.UPLOADS.resolve()
+        if not (target == uploads or uploads in target.parents) or not target.is_file():
+            raise HTTPException(status_code=400, detail="reference image must be under uploads/")
+        reference = str(target)
+    try:
+        return persona_generator.generate_candidates(
+            prompt=payload.prompt,
+            count=payload.count,
+            aspect_ratio=payload.aspect_ratio,
+            reference_path=reference,
+            model=payload.model,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"image generation failed: {exc}") from exc
+
+
+@app.get("/api/personas/{persona_id}")
+def get_persona(persona_id: str) -> dict[str, Any]:
+    persona = persona_store.load_persona(persona_id)
+    if persona is None:
+        raise HTTPException(status_code=404, detail="persona not found")
+    return {"persona": persona}
+
+
+@app.patch("/api/personas/{persona_id}")
+def patch_persona(persona_id: str, payload: PersonaPayload) -> dict[str, Any]:
+    if persona_store.load_persona(persona_id) is None:
+        raise HTTPException(status_code=404, detail="persona not found")
+    try:
+        persona = persona_store.save_persona(payload.model_dump(exclude_unset=True), persona_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"persona": persona}
+
+
+@app.delete("/api/personas/{persona_id}")
+def remove_persona(persona_id: str) -> dict[str, Any]:
+    return {"removed": persona_store.delete_persona(persona_id)}
+
+
+@app.get("/api/models")
+def list_model_profiles(capability: str | None = None) -> dict[str, Any]:
+    return {"models": model_caps.list_profiles(capability=capability)}
+
+
+@app.get("/api/models/{profile_id}/preflight")
+def preflight_model(
+    profile_id: str,
+    resolution: str | None = None,
+    duration: float | None = None,
+    operation: str | None = None,
+    references: int = 0,
+) -> dict[str, Any]:
+    return model_caps.preflight(
+        profile_id,
+        resolution=resolution,
+        duration=duration,
+        operation=operation,
+        references=references,
+    )
+
+
+@app.get("/api/products")
+def list_products(include_archived: bool = False) -> dict[str, Any]:
+    return {"products": product_store.list_products(include_archived=include_archived)}
+
+
+@app.post("/api/products")
+def create_product(payload: ProductPayload) -> dict[str, Any]:
+    try:
+        product = product_store.save_product(payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"product": product}
+
+
+@app.get("/api/products/{product_id}")
+def get_product(product_id: str) -> dict[str, Any]:
+    product = product_store.load_product(product_id)
+    if product is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    return {"product": product}
+
+
+@app.patch("/api/products/{product_id}")
+def patch_product(product_id: str, payload: ProductPayload) -> dict[str, Any]:
+    if product_store.load_product(product_id) is None:
+        raise HTTPException(status_code=404, detail="product not found")
+    try:
+        product = product_store.save_product(payload.model_dump(exclude_unset=True), product_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"product": product}
+
+
+@app.delete("/api/products/{product_id}")
+def remove_product(product_id: str) -> dict[str, Any]:
+    return {"removed": product_store.delete_product(product_id)}
+
+
+@app.post("/api/projects/{project_id}/digital-human/plan")
+def plan_digital_human(project_id: str, payload: DigitalHumanPayload) -> dict[str, Any]:
+    try:
+        take = digital_human.plan(project_id, **payload.model_dump(exclude_unset=True))
+    except (FileNotFoundError, KeyError) as exc:
+        raise HTTPException(status_code=404, detail=f"shot/version not found: {exc}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"take": take}
+
+
+@app.get("/api/formats")
+def list_formats() -> dict[str, Any]:
+    return {"formats": formats.list_formats()}
+
+
+@app.post("/api/projects/{project_id}/pipeline/complete")
+def complete_pipeline_render(project_id: str, payload: PipelineCompletePayload) -> dict[str, Any]:
+    try:
+        return pipeline_runner.complete_render(
+            project_id,
+            payload.version_id,
+            payload.render_path,
+            approved=payload.approve,
+            product_id=payload.product_id,
+        )
+    except (FileNotFoundError, KeyError) as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"complete render failed: {exc}") from exc
 
 
 @app.get("/api/brands")

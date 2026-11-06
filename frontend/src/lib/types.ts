@@ -225,6 +225,9 @@ export interface ProjectRecord {
   quality_tier: string;
   pipeline_type?: string;
   brand_id?: string | null;
+  persona_id?: string | null;
+  product_id?: string | null;
+  format_id?: string | null;
   route?: RouteOption | null;
   brief?: ProjectBrief;
   current_version_id?: string | null;
@@ -252,6 +255,13 @@ export interface Shot {
   duration_s: number;
   take_count?: number;
   cost_usd?: number;
+  production_method?: string;
+  persona_id?: string | null;
+  product_id?: string | null;
+  asset_refs?: Record<string, unknown>;
+  generation_spec?: Record<string, unknown>;
+  shot_language?: Record<string, unknown>;
+  timeline?: Record<string, unknown>;
 }
 
 export interface RenderInfo {
@@ -295,6 +305,143 @@ export interface Brand {
   voice?: Record<string, unknown>;
   banned_words?: string[];
   default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+export type PersonaKind = "photo" | "video" | "avatar";
+export type PersonaStatus = "draft" | "ready" | "archived";
+
+export interface PersonaRights {
+  ai_allowed: boolean;
+  consent: boolean;
+  commercial_use: boolean;
+  note?: string;
+  expires_at?: string;
+}
+
+export interface PersonaCandidate {
+  index: number;
+  path: string;
+  filename: string;
+}
+
+export interface PersonaGeneration {
+  candidates: PersonaCandidate[];
+  prompt: string;
+  model: string;
+  aspect_ratio: string;
+  reference_used: boolean;
+  cost_usd: number;
+}
+
+export interface Persona {
+  id: string;
+  name: string;
+  kind: PersonaKind;
+  status: PersonaStatus;
+  source_path?: string | null;
+  preview_path?: string | null;
+  asset_paths?: string[];
+  description?: string;
+  gender?: string;
+  age_range?: string;
+  look?: string;
+  wardrobe?: string;
+  scene?: string;
+  tags?: string[];
+  voice?: Record<string, unknown>;
+  rights: PersonaRights;
+  providers?: Record<string, string>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+
+export interface ProductCompositeTake {
+  id: string;
+  project_id: string;
+  version_id: string;
+  shot_id: string;
+  product_id?: string | null;
+  status: "ready" | "blocked" | "done" | "failed" | string;
+  blockers: string[];
+  warnings: string[];
+  input?: Record<string, unknown>;
+  output_path?: string;
+  label_qa?: { verdict: string; expected?: string; actual?: string; detail?: string };
+  result?: { success?: boolean; error?: string | null; output?: string | null; label_qa?: Record<string, unknown> } | null;
+}
+
+export interface DigitalHumanTake {
+  id: string;
+  project_id: string;
+  version_id: string;
+  shot_id: string;
+  profile_id: string;
+  persona_id?: string | null;
+  product_id?: string | null;
+  status: "ready" | "blocked" | "failed" | "running" | string;
+  blockers: string[];
+  warnings: string[];
+  profile?: ModelProfile;
+  input?: Record<string, unknown>;
+  output_path?: string;
+  result?: Record<string, unknown> | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
+export interface FormatPreset {
+  id: string;
+  label: string;
+  pipeline: string;
+  route: string;
+  duration_s: number;
+  aspect: string;
+  description: string;
+  required_capabilities: string[];
+  best_for: string;
+}
+
+export interface ModelProfile {
+  id: string;
+  label: string;
+  provider: string;
+  capability: string;
+  kind: string;
+  region: string;
+  requires: string[];
+  model?: string;
+  resolutions: string[];
+  durations: number[];
+  native_audio: boolean;
+  lip_sync?: boolean;
+  reference_images?: number;
+  supports: string[];
+  cost_note?: string;
+  configured: boolean;
+  status: "available" | "unconfigured" | "blocked" | string;
+  status_reason?: string;
+}
+
+
+export interface Product {
+  id: string;
+  name: string;
+  sku?: string;
+  brand?: string;
+  label_text?: string;
+  category?: string;
+  hero_path?: string | null;
+  detail_paths?: string[];
+  tags?: string[];
+  status: "draft" | "locked" | "archived" | string;
+  locked: boolean;
+  rights: { commercial_use: boolean; ai_reference_allowed: boolean; note?: string };
   created_at?: string;
   updated_at?: string;
 }
@@ -445,6 +592,7 @@ export interface CreateProjectBody {
   duration_s?: number;
   quality_tier?: string;
   pipeline_type?: string;
+  persona_id?: string | null;
 }
 
 export type ProposalStatus = "none" | "ready" | "approved" | "rejected";
@@ -533,6 +681,9 @@ export interface RouteOption {
 }
 
 export interface StageRow {
+  canonical_stage?: string | null;
+  canonical_artifact?: string | null;
+  checkpoint_status?: string | null;
   id: StageId;
   label: string;
   short: string;
@@ -547,6 +698,9 @@ export interface ProductionView {
   project: ProjectRecord;
   route: RouteOption;
   routes: RouteOption[];
+  models?: ModelProfile[];
+  persona?: Persona | null;
+  product?: Product | null;
   brief: PlanBrief;
   stages: StageRow[];
   current_stage: StageId;

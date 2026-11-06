@@ -1,10 +1,11 @@
-import { Show, createEffect, createSignal, on } from "solid-js";
+import { For, Show, createEffect, createSignal, on } from "solid-js";
 import Dialog from "../ui/Dialog";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import TextArea from "../ui/TextArea";
 import { endpoints } from "../../lib/api";
 import { refreshProjects } from "../../stores/projects";
+import type { FormatPreset } from "../../lib/types";
 
 const PLATFORMS = [
   { value: "douyin", label: "抖音" },
@@ -34,6 +35,8 @@ export default function NewProjectDialog(props: Props) {
   const [platform, setPlatform] = createSignal("douyin");
   const [duration, setDuration] = createSignal(15);
   const [tier, setTier] = createSignal("standard");
+  const [formats, setFormats] = createSignal<FormatPreset[]>([]);
+  const [formatId, setFormatId] = createSignal("host_product_ad");
   const [busy, setBusy] = createSignal(false);
   const [error, setError] = createSignal("");
 
@@ -44,6 +47,7 @@ export default function NewProjectDialog(props: Props) {
     setPlatform("douyin");
     setDuration(15);
     setTier("standard");
+    setFormatId("host_product_ad");
     setError("");
   };
 
@@ -51,7 +55,15 @@ export default function NewProjectDialog(props: Props) {
     on(
       () => props.open,
       (open) => {
-        if (open) reset();
+        if (open) {
+          reset();
+          void endpoints.formats().then((data) => {
+            setFormats(data.formats ?? []);
+            if (data.formats?.length && !data.formats.some((item) => item.id === formatId())) {
+              setFormatId(data.formats[0].id);
+            }
+          }).catch(() => undefined);
+        }
       },
     ),
   );
@@ -66,8 +78,12 @@ export default function NewProjectDialog(props: Props) {
     setBusy(true);
     setError("");
     try {
+      const preset = formats().find((item) => item.id === formatId());
       const data = await endpoints.createProject({
         title: name,
+        format_id: formatId(),
+        route: preset ? { id: preset.route } : undefined,
+        pipeline_type: preset?.pipeline,
         brief: {
           product: name,
           audience: audience().trim(),
@@ -90,6 +106,29 @@ export default function NewProjectDialog(props: Props) {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange} title="新建项目">
       <form class="space-y-4" onSubmit={(event) => void submit(event)}>
+        <div>
+          <label class="mb-1.5 block text-[10.5px] text-faint">广告格式</label>
+          <div class="grid grid-cols-3 gap-2">
+            <For each={formats()}>
+              {(item) => (
+                <button
+                  type="button"
+                  class={`rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                    formatId() === item.id ? "border-accent/60 bg-accent/10" : "border-line hover:border-line-soft"
+                  }`}
+                  onClick={() => {
+                    setFormatId(item.id);
+                    setDuration(item.duration_s);
+                  }}
+                >
+                  <div class="text-[11.5px] font-medium text-text">{item.label}</div>
+                  <div class="mt-0.5 line-clamp-2 text-[9.5px] leading-4 text-faint">{item.description}</div>
+                </button>
+              )}
+            </For>
+          </div>
+        </div>
+
         <div>
           <label class="mb-1.5 block text-[10.5px] text-faint">产品 / 主题</label>
           <Input

@@ -1,6 +1,6 @@
 # workspace
 .venv/
-.venv-wan/
+.venv-*/
 dist/
 node_modules/
 

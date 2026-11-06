@@ -8,6 +8,13 @@ import type {
   Artifact,
   Asset,
   Brand,
+  DigitalHumanTake,
+  FormatPreset,
+  PersonaGeneration,
+  ModelProfile,
+  ProductCompositeTake,
+  Persona,
+  Product,
   CreateProjectBody,
   Deliverable,
   Job,
@@ -131,6 +138,36 @@ export const endpoints = {
   reuseAsset: (id: string, body: { project_id: string; shot_id?: string; mode: "reference" | "replace" }) =>
     api.post<ReuseAssetResult>(`/api/assets/${encodeURIComponent(id)}/reuse`, body),
   deleteAsset: (id: string) => api.del<{ removed: boolean }>(`/api/assets/${encodeURIComponent(id)}`),
+
+  products: () => api.get<{ products: Product[] }>("/api/products"),
+  createProduct: (body: Record<string, unknown>) => api.post<{ product: Product }>("/api/products", body),
+  patchProduct: (id: string, body: Record<string, unknown>) =>
+    api.patch<{ product: Product }>(`/api/products/${encodeURIComponent(id)}`, body),
+  deleteProduct: (id: string) => api.del<{ removed: boolean }>(`/api/products/${encodeURIComponent(id)}`),
+
+  formats: () => api.get<{ formats: FormatPreset[] }>("/api/formats"),
+
+  personas: () => api.get<{ personas: Persona[] }>("/api/personas"),
+  createPersona: (body: Record<string, unknown>) => api.post<{ persona: Persona }>("/api/personas", body),
+  generatePersona: (body: Record<string, unknown>) => api.post<PersonaGeneration>("/api/personas/generate", body),
+  patchPersona: (id: string, body: Record<string, unknown>) =>
+    api.patch<{ persona: Persona }>(`/api/personas/${encodeURIComponent(id)}`, body),
+  deletePersona: (id: string) => api.del<{ removed: boolean }>(`/api/personas/${encodeURIComponent(id)}`),
+  planDigitalHuman: (projectId: string, body: Record<string, unknown>) =>
+    api.post<{ take: DigitalHumanTake }>(`/api/projects/${encodeURIComponent(projectId)}/digital-human/plan`, body),
+  startDigitalHuman: (projectId: string, body: Record<string, unknown>) =>
+    api.post<{ stage: string; status: string; take: DigitalHumanTake; checkpoint?: Record<string, unknown> | null }>(
+      `/api/projects/${encodeURIComponent(projectId)}/pipeline/assets`, body,
+    ),
+  planProductComposite: (projectId: string, body: Record<string, unknown>) =>
+    api.post<{ take: ProductCompositeTake }>(`/api/projects/${encodeURIComponent(projectId)}/product-composite/plan`, body),
+  runProductComposite: (projectId: string, body: Record<string, unknown>) =>
+    api.post<{ take: ProductCompositeTake }>(`/api/projects/${encodeURIComponent(projectId)}/product-composite/takes`, body),
+  productCompositeTakes: (projectId: string) =>
+    api.get<{ takes: ProductCompositeTake[] }>(`/api/projects/${encodeURIComponent(projectId)}/product-composite/takes`),
+
+  models: (capability?: string) =>
+    api.get<{ models: ModelProfile[] }>(`/api/models${capability ? `?capability=${encodeURIComponent(capability)}` : ""}`),
 
   brands: () => api.get<{ brands: Brand[] }>("/api/brands"),
   brand: (id: string) => api.get<{ brand: Brand }>(`/api/brands/${encodeURIComponent(id)}`),

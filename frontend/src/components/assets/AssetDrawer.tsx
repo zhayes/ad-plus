@@ -27,6 +27,7 @@ export default function AssetDrawer(props: Props) {
   const [targetShot, setTargetShot] = createSignal("");
   const [busy, setBusy] = createSignal(false);
   const [message, setMessage] = createSignal("");
+  const [confirmDelete, setConfirmDelete] = createSignal(false);
 
   const shots = () => detail()?.current_version?.shots ?? [];
 
@@ -39,6 +40,7 @@ export default function AssetDrawer(props: Props) {
     setLoading(true);
     setError("");
     setMessage("");
+    setConfirmDelete(false);
     try {
       const data = await endpoints.asset(id);
       setAsset(data.asset);
@@ -142,7 +144,10 @@ export default function AssetDrawer(props: Props) {
   const remove = async () => {
     const current = asset();
     if (!current) return;
-    if (!window.confirm(`删除「${current.name}」？`)) return;
+    if (!confirmDelete()) {
+      setConfirmDelete(true);
+      return;
+    }
     setBusy(true);
     try {
       await endpoints.deleteAsset(current.id);
@@ -171,7 +176,7 @@ export default function AssetDrawer(props: Props) {
   return (
     <Show when={props.assetId}>
       <div class="fixed inset-0 z-40" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={props.onClose} />
+        <div class="absolute inset-0 bg-black/30 sm:bg-transparent" onClick={props.onClose} />
         <aside class="absolute right-0 top-0 flex h-full w-[min(380px,calc(100vw-16px))] flex-col border-l border-line-soft bg-surface shadow-2xl">
           <div class="flex h-11 shrink-0 items-center gap-2 border-b border-line-soft px-3">
             <span class="text-[12px] font-semibold">素材详情</span>
@@ -291,8 +296,20 @@ export default function AssetDrawer(props: Props) {
                   </Button>
                   <Show when={asset()!.source !== "render"}>
                     <Button size="sm" variant="danger" class="ml-auto" loading={busy()} onClick={() => void remove()}>
-                      删除
+                      {confirmDelete() ? "确认删除" : "删除"}
                     </Button>
+                    <Show when={confirmDelete()}>
+                      <button
+                        type="button"
+                        class="text-[10px] text-faint hover:text-text"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfirmDelete(false);
+                        }}
+                      >
+                        取消
+                      </button>
+                    </Show>
                   </Show>
                 </div>
 

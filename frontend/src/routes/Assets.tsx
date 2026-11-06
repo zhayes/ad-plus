@@ -1,19 +1,30 @@
 import { For, Show, createSignal } from "solid-js";
+import { useNavigate, useParams } from "@solidjs/router";
 import AppShellV2 from "../components/layout/AppShellV2";
 import AssetsPanel from "../components/assets/AssetsPanel";
 import BrandsPanel from "../components/assets/BrandsPanel";
+import PersonasPanel from "../components/assets/PersonasPanel";
+import ProductsPanel from "../components/assets/ProductsPanel";
 import Button from "../components/ui/Button";
 
 const TABS = [
   { value: "assets", label: "素材" },
+  { value: "products", label: "商品" },
+  { value: "personas", label: "数字人" },
   { value: "brands", label: "品牌" },
   { value: "templates", label: "模板" },
 ];
 
 export default function Assets() {
-  const [tab, setTab] = createSignal("assets");
+  const params = useParams();
+  const navigate = useNavigate();
+  const validTabs = new Set(TABS.map((item) => item.value));
+  const initialTab = params.tab && validTabs.has(params.tab) ? params.tab : "assets";
+  const [tab, setTab] = createSignal(initialTab);
   const [assetOpen, setAssetOpen] = createSignal<{ fn: () => void } | null>(null);
   const [brandOpen, setBrandOpen] = createSignal<{ fn: () => void } | null>(null);
+  const [personaOpen, setPersonaOpen] = createSignal<{ fn: () => void } | null>(null);
+  const [productOpen, setProductOpen] = createSignal<{ fn: () => void } | null>(null);
 
   const AssetsPrimary = () => (
     <Button size="sm" variant="primary" onClick={() => assetOpen()?.fn()}>
@@ -25,6 +36,16 @@ export default function Assets() {
       ＋ 新建品牌
     </Button>
   );
+  const PersonasPrimary = () => (
+    <Button size="sm" variant="primary" onClick={() => personaOpen()?.fn()}>
+      ＋ 新建数字人
+    </Button>
+  );
+  const ProductsPrimary = () => (
+    <Button size="sm" variant="primary" onClick={() => productOpen()?.fn()}>
+      ＋ 新建商品
+    </Button>
+  );
 
   return (
     <AppShellV2
@@ -33,7 +54,7 @@ export default function Assets() {
         <div class="flex items-center gap-2">
           <span class="text-[13px] font-semibold text-text">资产</span>
           <span class="rounded border border-line px-1 py-px text-[10px] text-faint">
-            {tab() === "brands" ? "品牌包" : tab() === "templates" ? "P1" : "素材"}
+            {tab() === "brands" ? "品牌包" : tab() === "personas" ? "可复用" : tab() === "products" ? "锁定资产" : tab() === "templates" ? "P1" : "素材"}
           </span>
         </div>
       }
@@ -46,7 +67,10 @@ export default function Assets() {
                 class={`h-6 rounded-md px-3 text-[11px] transition-colors ${
                   tab() === item.value ? "bg-surface-2 text-text" : "text-faint hover:text-text"
                 }`}
-                onClick={() => setTab(item.value)}
+                onClick={() => {
+                  setTab(item.value);
+                  navigate(`/assets/${item.value}`);
+                }}
               >
                 {item.label}
               </button>
@@ -55,14 +79,44 @@ export default function Assets() {
         </div>
       }
       primary={
-        <Show when={tab() === "assets"} fallback={<Show when={tab() === "brands"} fallback={<Button size="sm" variant="primary" disabled title="模板库 P1">＋ 新建模板</Button>}><BrandsPrimary /></Show>}>
+        <Show
+          when={tab() === "assets"}
+          fallback={
+            <Show
+              when={tab() === "personas"}
+              fallback={
+                <Show
+                  when={tab() === "products"}
+                  fallback={
+                    <Show
+                      when={tab() === "brands"}
+                  fallback={<Button size="sm" variant="primary" disabled title="模板库 P1">＋ 新建模板</Button>}
+                >
+                      <BrandsPrimary />
+                    </Show>
+                  }
+                >
+                  <ProductsPrimary />
+                </Show>
+              }
+            >
+              <PersonasPrimary />
+            </Show>
+          }
+        >
           <AssetsPrimary />
         </Show>
       }
-      footer={<span class="text-[10px] text-faint">素材 · 品牌 · 模板</span>}
+      footer={<span class="text-[10px] text-faint">素材 · 数字人 · 品牌 · 模板</span>}
     >
       <Show when={tab() === "assets"}>
         <AssetsPanel onPrimaryReady={(fn) => setAssetOpen({ fn })} />
+      </Show>
+      <Show when={tab() === "products"}>
+        <ProductsPanel onPrimaryReady={(fn) => setProductOpen({ fn })} />
+      </Show>
+      <Show when={tab() === "personas"}>
+        <PersonasPanel onPrimaryReady={(fn) => setPersonaOpen({ fn })} />
       </Show>
       <Show when={tab() === "brands"}>
         <BrandsPanel onPrimaryReady={(fn) => setBrandOpen({ fn })} />

@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from adplus import project_store
+from adplus import capabilities as model_caps
+from adplus import pipeline_adapter
 
 PROJECTS = project_store.PROJECTS
 
@@ -29,6 +31,18 @@ ROUTES: dict[str, dict[str, Any]] = {
         "eta_hint": "10–15 分钟",
         "requires": [],
         "available": True,
+    },
+    "avatar_spokesperson": {
+        "id": "avatar_spokesperson",
+        "label": "数字人口播",
+        "pipeline": "avatar-spokesperson",
+        "runtime": "avatar",
+        "description": "数字模特 + 音频/脚本，走 Kling Avatar / HeyGen / Wav2Lip；人物与口型独立于商品镜头。",
+        "best_for": "主播口播 / 知识带货 / 不需要真人出镜",
+        "cost_hint": "$0.30–3.00",
+        "eta_hint": "5–15 分钟",
+        "requires": ["数字模特授权", "口型/数字人模型 key"],
+        "available": False,
     },
     "hybrid": {
         "id": "hybrid",
@@ -81,6 +95,23 @@ def load_approvals(project_id: str) -> dict[str, Any]:
     return _read(approvals_path(project_id)) or {}
 
 
+def route_catalog() -> list[dict[str, Any]]:
+    """Routes are still Ad+ labels, but availability comes from capabilities."""
+    profiles = model_caps.list_profiles()
+    video_ready = any(item.get("status") == "available" and item.get("capability") == "video_generation" for item in profiles)
+    avatar_ready = any(item.get("status") == "available" and item.get("capability") in {"avatar", "lip_sync"} for item in profiles)
+    rows: list[dict[str, Any]] = []
+    for raw in ROUTES.values():
+        item = dict(raw)
+        if item["id"] == "hybrid":
+            item["available"] = video_ready
+        elif item["id"] == "avatar_spokesperson":
+            item["available"] = avatar_ready
+        item["canonical"] = pipeline_adapter.route_view(str(item["id"]))
+        rows.append(item)
+    return rows
+
+
 def route_for(project: dict[str, Any]) -> dict[str, Any]:
     raw = project.get("route")
     route_id = raw.get("id") if isinstance(raw, dict) else str(raw or "")
@@ -112,6 +143,15 @@ def script_for(project_id: str) -> dict[str, Any] | None:
     stored = _read(root / "artifacts" / "script.json")
     if stored and isinstance(stored.get("lines"), list):
         return stored
+    if stored and isinstance(stored.get("sections"), list):
+        return {
+            "source": "canonical",
+            "lines": [
+                {"id": str(section.get("id") or f"l{index}"), "text": str(section.get("text") or "")}
+                for index, section in enumerate(stored["sections"], 1)
+                if str(section.get("text") or "").strip()
+            ],
+        }
     packet = _read(root / "artifacts" / "proposal_packet.json") or {}
     lines = packet.get("script")
     if isinstance(lines, str):
@@ -311,6 +351,59 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
         artifact="final_review",
     ))
 
+    checkpoint_status: dict[str, Any] = {}
+    checkpoint_by_stage: dict[str, dict[str, Any]] = {}
+    for row in stage_rows:
+        row["canonical_stage"] = pipeline_adapter.STAGE_MAP.get(str(row["id"]))
+        row["canonical_artifact"] = pipeline_adapter.canonical_artifact(str(row.get("canonical_stage") or ""))
+        canonical_stage = row.get("canonical_stage")
+        if canonical_stage:
+            try:
+                from lib.checkpoint import read_checkpoint
+                cp = read_checkpoint(PROJECTS, project_id, str(canonical_stage))
+            except Exception:
+                cp = None
+            if cp:
+                checkpoint_status[str(canonical_stage)] = cp.get("status")
+                checkpoint_by_stage[str(canonical_stage)] = cp
+                row["checkpoint_status"] = cp.get("status")
+                if cp.get("status") == "completed":
+                    row["status"] = "approved"
+                    row["action"] = "已完成"
+                elif cp.get("status") == "awaiting_human":
+                    row["status"] = "review"
+                elif cp.get("status") in {"failed", "in_progress"}:
+                    row["status"] = "review"
+                    row["summary"] = str(cp.get("error") or row.get("summary") or "")
+                    row["action"] = "修复后重试"
+
+    if checkpoint_by_stage:
+        proposal_row = next((row for row in stage_rows if row["id"] == "proposal"), None)
+        if proposal_row is not None:
+            # proposal is the Ad+ commercial gate, not a production stage; it
+            # must not block canonical pipeline progression.
+            proposal_row["status"] = "approved"
+            proposal_row["action"] = "商业层独立"
+        canonical_stages = list((pipeline_adapter.route_view(str(route.get("id"))).get("stages") or []))
+        for row in stage_rows:
+            canonical = row.get("canonical_stage")
+            if row["id"] == "proposal" or not canonical or canonical in checkpoint_by_stage:
+                continue
+            # A checkpoint pipeline exists: absence of this checkpoint means
+            # the stage has not run, regardless of legacy Ad+ artifacts.
+            try:
+                position = canonical_stages.index(str(canonical))
+            except ValueError:
+                continue
+            predecessors = canonical_stages[:position]
+            ready = all(
+                (checkpoint_by_stage.get(stage) or {}).get("status") == "completed"
+                for stage in predecessors
+            )
+            row["status"] = "ready" if ready else "locked"
+            row["summary"] = "等待 OpenMontage checkpoint"
+            row["action"] = "运行该 stage" if ready else "先完成上一阶段"
+
     current = next((row for row in stage_rows if row["status"] != "approved"), stage_rows[-1])
     for row in stage_rows:
         index = STAGE_IDS.index(row["id"])
@@ -331,7 +424,14 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
     return {
         "project": project,
         "route": route,
-        "routes": list(ROUTES.values()),
+        "routes": route_catalog(),
+        "pipeline": pipeline_adapter.route_view(str(route.get("id"))),
+        "stage_projection": pipeline_adapter.stage_projection(),
+        "checkpoints": checkpoint_status,
+        "pipeline_mode": bool(checkpoint_by_stage),
+        "models": model_caps.list_profiles(),
+        "persona": project_store.persona_snapshot(project.get("persona_id")),
+        "product": project_store.product_snapshot(project.get("product_id")),
         "brief": brief,
         "stages": stage_rows,
         "current_stage": current["id"],

@@ -167,9 +167,32 @@ def plan_from_brief(
     per_scene = duration / scenes
     notes: list[str] = [f"{scenes} 个镜头 · 每镜约 {per_scene:.1f}s", f"{aspect} · {fps}fps"]
 
-    video_key = _configured(("ATLASCLOUD_API_KEY", "KLING_API_KEY", "MINIMAX_API_KEY", "FAL_KEY"))
+    from adplus import capabilities as model_caps
+
+    video_key = _configured(("ARK_API_KEY", "MINIMAX_API_KEY", "KLING_API_KEY", "ATLASCLOUD_API_KEY", "FAL_KEY"))
+    seedance_duration = max(4, min(15, round(per_scene)))
+    seedance_ready = False
+    if video_key == "ARK_API_KEY":
+        seedance_ready = model_caps.preflight(
+            "seedance-2.0",
+            resolution="480p",
+            duration=seedance_duration,
+            operation="image_to_video",
+        )["ok"]
+        if not seedance_ready:
+            video_key = _configured(("MINIMAX_API_KEY", "KLING_API_KEY", "ATLASCLOUD_API_KEY", "FAL_KEY"))
     shots: list[dict[str, Any]] = []
-    if video_key == "ATLASCLOUD_API_KEY":
+    if seedance_ready:
+        shots.append({"tool": "seedance_ark", "label": f"{scenes} 个镜头 · Seedance 2.0 480p",
+                      "params": {"operation": "image_to_video", "model_variant": "standard",
+                                 "resolution": "480p", "duration": seedance_duration}, "count": scenes})
+        notes.append("画面由火山方舟 Seedance 2.0 生成（480p）")
+    elif video_key == "MINIMAX_API_KEY":
+        shots.append({"tool": "minimax_video", "label": f"{scenes} 个镜头 · MiniMax Hailuo",
+                      "params": {"model": "MiniMax-Hailuo-2.3-Fast", "resolution": "768P",
+                                 "duration": max(6, round(per_scene))}, "count": scenes})
+        notes.append("画面由 MiniMax Hailuo 生成（768P → 480P 交付）")
+    elif video_key == "ATLASCLOUD_API_KEY":
         shots.append({"tool": "atlas_video", "label": f"{scenes} 个镜头 · Atlas Cloud 视频",
                       "params": {"duration": max(4, round(per_scene)), "model_variant": "standard"}, "count": scenes})
         notes.append("画面由 Atlas Cloud 生成")

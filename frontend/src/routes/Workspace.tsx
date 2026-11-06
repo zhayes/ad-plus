@@ -46,7 +46,7 @@ export default function Workspace() {
   const params = useParams();
   const navigate = useNavigate();
 
-  const [railOpen, setRailOpen] = createSignal(true);
+  const [railOpen, setRailOpen] = createSignal(false);
   const [panelOpen, setPanelOpen] = createSignal(false);
   const [artifacts, setArtifacts] = createSignal<Artifact[]>([]);
   const [model, setModel] = createSignal("deepseek-flash");
