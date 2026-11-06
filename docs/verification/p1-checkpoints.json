@@ -1,0 +1,52 @@
+{
+  "idea": {
+    "status": "completed",
+    "artifacts": [
+      "brief"
+    ],
+    "human_approved": true
+  },
+  "script": {
+    "status": "completed",
+    "artifacts": [
+      "script"
+    ],
+    "human_approved": true
+  },
+  "scene_plan": {
+    "status": "completed",
+    "artifacts": [
+      "scene_plan"
+    ],
+    "human_approved": true
+  },
+  "assets": {
+    "status": "completed",
+    "artifacts": [
+      "asset_manifest"
+    ],
+    "human_approved": true
+  },
+  "edit": {
+    "status": "completed",
+    "artifacts": [
+      "edit_decisions"
+    ],
+    "human_approved": true
+  },
+  "compose": {
+    "status": "completed",
+    "artifacts": [
+      "render_report",
+      "final_review"
+    ],
+    "human_approved": true
+  },
+  "publish": {
+    "status": "completed",
+    "artifacts": [
+      "publish_log"
+    ],
+    "human_approved": true
+  }
+}
