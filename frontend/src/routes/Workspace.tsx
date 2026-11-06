@@ -72,12 +72,14 @@ export default function Workspace() {
 
   const loadModels = async () => {
     try {
-      const data = await api.get<{ models: { provider: string; model: string }[] }>("/api/pi/models");
-      const options = (data.models ?? []).map((m) => ({
-        value: `${m.provider}/${m.model}`,
-        label: m.model,
-        hint: `${m.provider} · ${m.model}`,
-      }));
+      const data = await api.get<{ models: { provider: string; model: string; kind?: string }[] }>("/api/pi/models");
+      const options = (data.models ?? [])
+        .filter((m) => !m.kind || m.kind === "text")
+        .map((m) => ({
+          value: `${m.provider}/${m.model}`,
+          label: m.model,
+          hint: `${m.provider} · ${m.model}`,
+        }));
       if (!options.length) return;
       setModels(options);
       const [first] = options;

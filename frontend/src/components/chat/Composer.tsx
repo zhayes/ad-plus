@@ -77,7 +77,7 @@ export default function Composer(props: Props) {
             value={text()}
             onInput={(event) => setText(event.currentTarget.value)}
             onSubmit={send}
-            placeholder="描述你要的广告，或直接说“再快一点 / 换个配色 / 加一版横屏”"
+            placeholder="描述你想生成的内容"
             class="pb-1"
             style={{ outline: "none" }}
           />

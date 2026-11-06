@@ -219,7 +219,7 @@ def list_models(force: bool = False) -> list[dict[str, str]]:
     for line in (out.get("stdout") or "").splitlines():
         parts = line.split()
         if len(parts) >= 2 and parts[0] not in {"provider", "No"}:
-            rows.append({"provider": parts[0], "model": parts[1]})
+            rows.append({"provider": parts[0], "model": parts[1], "kind": "text"})
     _MODEL_CACHE.update(at=_time.time(), models=rows)
     return rows
 

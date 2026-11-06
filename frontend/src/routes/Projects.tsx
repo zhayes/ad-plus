@@ -247,8 +247,8 @@ export default function Projects() {
               <div class="grid place-items-center rounded-xl border border-dashed border-line bg-surface/40 py-20">
                 <div class="max-w-[360px] text-center">
                   <div class="text-[13px] font-medium text-text">还没有项目</div>
-                  <p class="mt-1.5 text-[11px] leading-5 text-faint">
-                    新建一个项目，确认简报和路线，先生成方案与报价，确认后才开始制作。
+                  <p class="mt-1.5 whitespace-nowrap text-[11px] leading-5 text-faint">
+                    先确认简报、路线和报价，再开始制作。
                   </p>
                   <Button class="mt-3" size="sm" variant="primary" onClick={() => setNewOpen(true)}>
                     ＋ 新建第一个项目
