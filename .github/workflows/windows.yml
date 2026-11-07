@@ -37,7 +37,12 @@ jobs:
         run: |
           foreach ($link in @("pipeline_defs", "skills", "styles", "AGENT_GUIDE.md", "PROJECT_CONTEXT.md")) {
             $item = Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
-            if ($item) { Remove-Item -LiteralPath $link -Recurse -Force -ErrorAction SilentlyContinue }
+            if (-not $item) { continue }
+            if ($item.LinkType -eq "SymbolicLink" -and $item.PSIsContainer) {
+              cmd /c rmdir "$link"
+            } else {
+              Remove-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
+            }
           }
 
       - name: Install ffmpeg
@@ -96,7 +101,12 @@ jobs:
         run: |
           foreach ($link in @("pipeline_defs", "skills", "styles", "AGENT_GUIDE.md", "PROJECT_CONTEXT.md")) {
             $item = Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
-            if ($item) { Remove-Item -LiteralPath $link -Recurse -Force -ErrorAction SilentlyContinue }
+            if (-not $item) { continue }
+            if ($item.LinkType -eq "SymbolicLink" -and $item.PSIsContainer) {
+              cmd /c rmdir "$link"
+            } else {
+              Remove-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
+            }
           }
 
       - name: Install dependencies
