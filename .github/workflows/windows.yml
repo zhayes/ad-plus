@@ -3,7 +3,7 @@ name: windows-restyle
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
     paths:
       - "adplus/restyle/**"
       - "app/**"
