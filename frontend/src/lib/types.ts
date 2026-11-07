@@ -718,3 +718,101 @@ export interface ProductionView {
   final_review: Record<string, unknown> | null;
   approvals: Record<string, { at?: string; comment?: string }>;
 }
+
+// ---------------------------------------------------------------------------
+// Restyle (改写)
+// ---------------------------------------------------------------------------
+
+export interface RestyleCaption {
+  text: string;
+  bbox?: number[] | null;
+  status?: string;
+}
+
+export interface RestyleShot {
+  id: string;
+  index: number;
+  start_s: number;
+  end_s: number;
+  duration_s: number;
+  keyframe?: string | null;
+  caption?: RestyleCaption;
+  groups?: Record<string, string>;
+  risk?: { score: number; reasons: string[] };
+  suggested?: string;
+}
+
+export interface RestyleGroup {
+  id: string;
+  label: string;
+  shot_ids: string[];
+  thumb?: string | null;
+}
+
+export interface RestyleBlueprint {
+  version: number;
+  video_type: string;
+  shots: RestyleShot[];
+  groups: {
+    scenes: RestyleGroup[];
+    outfits: RestyleGroup[];
+    products: RestyleGroup[];
+    objects: RestyleGroup[];
+  };
+  suggestions?: {
+    change_shot_ids: string[];
+    keep_shot_ids: string[];
+    reason: string;
+  };
+  caption_count?: number;
+}
+
+export interface RestylePlan {
+  revision: number;
+  change_level: "light" | "recommended" | "all" | string;
+  cast?: Record<string, unknown>;
+  scenes?: Record<string, { mode?: string; [key: string]: unknown }>;
+  objects?: Record<string, { mode?: string; [key: string]: unknown }>;
+  product?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  captions?: Record<string, unknown>;
+  overrides?: Record<string, unknown>;
+  updated_at?: string;
+}
+
+export interface RestyleSource {
+  path: string;
+  original_path?: string;
+  hash?: string;
+  probe?: {
+    duration_s?: number;
+    width?: number;
+    height?: number;
+    fps?: number;
+    aspect?: string;
+    has_audio?: boolean;
+  };
+  rights?: { confirmed?: boolean; note?: string };
+}
+
+export interface RestyleSummary {
+  id: string;
+  title: string;
+  status: string;
+  aspect?: string;
+  duration_s?: number;
+  cover?: string | null;
+  shot_count: number;
+  caption_count: number;
+  analyzed: boolean;
+  updated_at?: string | null;
+  source_path?: string | null;
+}
+
+export interface RestyleDetail {
+  project: ProjectRecord;
+  source: RestyleSource | null;
+  blueprint: RestyleBlueprint | null;
+  plan: RestylePlan | null;
+  jobs: Job[];
+}

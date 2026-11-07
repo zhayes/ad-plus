@@ -23,6 +23,9 @@ import type {
   ProjectRecord,
   ProjectSummary,
   Quote,
+  RestyleDetail,
+  RestylePlan,
+  RestyleSummary,
   ReuseAssetResult,
   ReviewPayload,
   Shot,
@@ -73,6 +76,17 @@ export const endpoints = {
   workspace: (params: string) => api.get<Record<string, unknown>>(`/api/workspace?${params}`),
 
   projects: () => api.get<{ projects: ProjectSummary[] }>("/api/projects"),
+
+  restyles: () => api.get<{ restyles: RestyleSummary[] }>("/api/restyle"),
+  restyle: (id: string) => api.get<RestyleDetail>(`/api/restyle/${encodeURIComponent(id)}`),
+  createRestyle: (body: { path: string; title?: string; rights_confirmed: boolean }) =>
+    api.post<{ restyle: RestyleDetail }>("/api/restyle", body),
+  analyzeRestyle: (id: string) =>
+    api.post<{ job: Job }>(`/api/restyle/${encodeURIComponent(id)}/analyze`),
+  saveRestylePlan: (id: string, revision: number, patch: Record<string, unknown>) =>
+    api.patch<{ plan: RestylePlan }>(`/api/restyle/${encodeURIComponent(id)}/plan`, { revision, patch }),
+  deleteRestyle: (id: string) =>
+    api.del<{ trash_id: string }>(`/api/restyle/${encodeURIComponent(id)}`),
   project: (id: string) => api.get<ProjectDetail>(`/api/projects/${encodeURIComponent(id)}`),
   createProject: (body: CreateProjectBody) =>
     api.post<{ project: ProjectRecord }>("/api/projects", body),

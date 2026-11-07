@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,8 @@ from adplus import local_tools
 from adplus import oms_tools
 from adplus import formats
 from adplus import capabilities as model_caps
+from adplus.restyle import segment as restyle_segment
+from adplus.restyle import store as restyle_store
 from app import capabilities, config_store, env_utils, pi_bridge, secrets_store
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -633,8 +636,11 @@ def _detail_or_404(project_id: str) -> dict[str, Any]:
 
 
 @app.get("/api/projects")
-def projects() -> dict[str, Any]:
-    return {"projects": project_store.list_projects()}
+def projects(include_restyle: bool = False) -> dict[str, Any]:
+    rows = project_store.list_projects()
+    if not include_restyle:
+        rows = [row for row in rows if row.get("format_id") != "reference_restyle"]
+    return {"projects": rows}
 
 
 @app.post("/api/projects")
@@ -2054,6 +2060,89 @@ async def chat_socket(ws: WebSocket) -> None:
             sender.cancel()
         if entry and queue:
             HUB.unsubscribe(entry, queue)
+
+
+class RestyleCreatePayload(BaseModel):
+    path: str
+    title: str | None = None
+    rights_confirmed: bool = False
+
+
+class RestylePlanPayload(BaseModel):
+    revision: int | None = None
+    patch: dict[str, Any]
+
+
+@app.get("/api/restyle/backends")
+def restyle_backends() -> dict[str, Any]:
+    return {
+        "platform": sys.platform,
+        "python": sys.version.split()[0],
+        "backends": restyle_segment.available_backends(),
+    }
+
+
+@app.get("/api/restyle")
+def restyle_list() -> dict[str, Any]:
+    return {"restyles": restyle_store.list_restyles()}
+
+
+@app.post("/api/restyle")
+def restyle_create(payload: RestyleCreatePayload) -> dict[str, Any]:
+    try:
+        record = restyle_store.create(
+            payload.path,
+            title=payload.title,
+            rights_confirmed=bool(payload.rights_confirmed),
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="source video not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"restyle": record}
+
+
+@app.get("/api/restyle/{project_id}")
+def restyle_detail(project_id: str) -> dict[str, Any]:
+    record = restyle_store.detail(project_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="restyle not found")
+    return record
+
+
+@app.post("/api/restyle/{project_id}/analyze")
+def restyle_analyze(project_id: str) -> dict[str, Any]:
+    try:
+        job = restyle_store.start_analysis(project_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    return {"job": job}
+
+
+@app.patch("/api/restyle/{project_id}/plan")
+def restyle_save_plan(project_id: str, payload: RestylePlanPayload) -> dict[str, Any]:
+    try:
+        plan = restyle_store.save_plan(project_id, payload.patch, payload.revision)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    except ValueError as exc:
+        if str(exc) == "revision_conflict":
+            current = restyle_store.detail(project_id) or {}
+            return JSONResponse(
+                status_code=409,
+                content={"detail": "revision conflict", "plan": current.get("plan")},
+            )
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"plan": plan}
+
+
+@app.delete("/api/restyle/{project_id}")
+def restyle_delete(project_id: str) -> dict[str, Any]:
+    try:
+        token = restyle_store.delete(project_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    return {"trash_id": token}
 
 
 @app.get("/api/health")

@@ -27,6 +27,7 @@ export type IconName =
   | "more-horizontal"
   | "grid"
   | "list"
+  | "layers"
   | "sparkles";
 
 const paths: Record<IconName, () => JSX.Element> = {
@@ -143,6 +144,12 @@ const paths: Record<IconName, () => JSX.Element> = {
     </>
   ),
   list: () => <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
+  layers: () => (
+    <>
+      <path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+    </>
+  ),
   sparkles: () => (
     <>
       <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" />

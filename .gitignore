@@ -43,3 +43,9 @@ htmlcov/
 
 # The vendored upstream keeps its own .git; the outer repo tracks it as a
 # submodule commit, so nothing here needs ignoring.
+
+# Windows sidecar build artifacts
+/app/desktop/binaries/backend/*
+!/app/desktop/binaries/backend/.gitkeep
+/app/desktop/resources/*
+!/app/desktop/resources/.gitkeep

@@ -3,7 +3,7 @@ import { useNavigate } from "@solidjs/router";
 import Icon, { type IconName } from "../ui/Icon";
 import { firstProjectId } from "../../stores/projects";
 
-export type ModuleKey = "projects" | "studio" | "create" | "assets" | "tasks" | "settings";
+export type ModuleKey = "projects" | "studio" | "create" | "restyle" | "assets" | "tasks" | "settings";
 
 interface Props {
   active: ModuleKey;
@@ -14,6 +14,7 @@ const ITEMS: { key: ModuleKey; label: string; icon: IconName; path: () => string
   { key: "projects", label: "项目", icon: "folder", path: () => "/projects" },
   { key: "studio", label: "制作", icon: "clapperboard", path: () => (firstProjectId() ? `/studio/${firstProjectId()}` : "/projects") },
   { key: "create", label: "自由创作", icon: "sparkles", path: () => "/chat" },
+  { key: "restyle", label: "改写", icon: "layers", path: () => "/restyle" },
   { key: "assets", label: "资产", icon: "library", path: () => "/assets" },
   { key: "tasks", label: "任务", icon: "list-checks", path: () => "/tasks" },
 ];

@@ -71,6 +71,7 @@ fn ureq_get(url: &str) -> Option<String> {
     raw.split("\r\n\r\n").nth(1).map(|body| body.to_string())
 }
 
+#[cfg(not(target_os = "windows"))]
 fn spawn_backend() -> Option<Child> {
     let repo = repo_root();
     let python = repo.join(".venv").join("bin").join("python");
@@ -92,6 +93,62 @@ fn spawn_backend() -> Option<Child> {
     ])
         .current_dir(&repo)
         .env("PATH", format!("{}/.local/bin:{}", std::env::var("HOME").unwrap_or_default(), std::env::var("PATH").unwrap_or_default()));
+    cmd.spawn().ok()
+}
+
+#[cfg(target_os = "windows")]
+fn spawn_backend() -> Option<Child> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
+    let candidates = [
+        exe_dir.join("resources").join("binaries").join("backend").join("adplus-backend").join("adplus-backend.exe"),
+        exe_dir.join("binaries").join("backend").join("adplus-backend").join("adplus-backend.exe"),
+        exe_dir.join("resources").join("binaries").join("backend").join("adplus-backend.exe"),
+        exe_dir.join("binaries").join("backend").join("adplus-backend.exe"),
+        exe_dir.join("resources").join("adplus-backend.exe"),
+        exe_dir.join("adplus-backend.exe"),
+    ];
+    let backend = candidates.into_iter().find(|path| path.is_file())?;
+
+    let appdata = std::env::var("APPDATA").ok()?;
+    let home = std::path::PathBuf::from(appdata).join("Ad+");
+    let resources = exe_dir.join("resources");
+    let vendor = resources.join("vendor").join("openmontage");
+    let _ = std::fs::create_dir_all(&home);
+
+    let mut cmd = Command::new(backend);
+    cmd.args([
+        "--no-window",
+        "--port",
+        &PORT.to_string(),
+        "--parent-pid",
+        &std::process::id().to_string(),
+    ])
+        .current_dir(&home)
+        .creation_flags(CREATE_NO_WINDOW)
+        .env("ADPLUS_HOME", &home)
+        .env("OPENMONTAGE_HOME", &vendor)
+        .env("OPENMONTAGE_PROJECTS_DIR", home.join("projects"))
+        .env("OPENMONTAGE_UPLOADS_DIR", home.join("uploads"))
+        .env("ADPLUS_PERSONAS_DIR", home.join("personas"))
+        .env("ADPLUS_PRODUCTS_DIR", home.join("products"))
+        .env("ADPLUS_BRANDS_DIR", home.join("brands"))
+        .env("OPENMONTAGE_MUSIC_DIR", home.join("music_library"))
+        .env("OPENMONTAGE_COMPOSER_DIR", resources.join("remotion-composer"))
+        .env("ADPLUS_STATE_DIR", home.join("state"));
+
+    for (env, name) in [
+        ("ADPLUS_FFMPEG", "ffmpeg.exe"),
+        ("ADPLUS_FFPROBE", "ffprobe.exe"),
+        ("ADPLUS_TESSERACT", "tesseract.exe"),
+    ] {
+        let candidate = resources.join("bin").join(name);
+        if candidate.is_file() {
+            cmd.env(env, candidate);
+        }
+    }
     cmd.spawn().ok()
 }
 

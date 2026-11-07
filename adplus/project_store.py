@@ -301,14 +301,17 @@ def project_summary(project: dict[str, Any]) -> dict[str, Any]:
         updated = (PROJECTS / project_id / "project.json").stat().st_mtime
     except OSError:
         updated = 0.0
-    try:
-        from adplus import production
-        prod = production.production_payload(project_id)
-        stage_label = next((item["label"] for item in (prod or {}).get("stages", []) if item["id"] == (prod or {}).get("current_stage")), "")
-        next_action = (prod or {}).get("next_action") or ""
-        route_label = ((prod or {}).get("route") or {}).get("label") or ""
-    except Exception:
-        stage_label, next_action, route_label = "", "", ""
+    if project.get("format_id") == "reference_restyle":
+        stage_label, next_action, route_label = "改写", "", "改写"
+    else:
+        try:
+            from adplus import production
+            prod = production.production_payload(project_id)
+            stage_label = next((item["label"] for item in (prod or {}).get("stages", []) if item["id"] == (prod or {}).get("current_stage")), "")
+            next_action = (prod or {}).get("next_action") or ""
+            route_label = ((prod or {}).get("route") or {}).get("label") or ""
+        except Exception:
+            stage_label, next_action, route_label = "", "", ""
     return {
         "id": project_id,
         "title": project.get("title") or project_id,
@@ -326,6 +329,7 @@ def project_summary(project: dict[str, Any]) -> dict[str, Any]:
         "pending_count": pending_count(project_id),
         "cost_usd": round(cost, 4),
         "brand_id": project.get("brand_id"),
+        "format_id": project.get("format_id"),
         "route_label": route_label,
         "stage_label": stage_label,
         "next_action": next_action,

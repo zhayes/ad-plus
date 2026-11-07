@@ -1,0 +1,129 @@
+name: windows-restyle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "adplus/restyle/**"
+      - "app/**"
+      - "frontend/**"
+      - "scripts/restyle_smoke.py"
+      - "requirements*.txt"
+      - ".github/workflows/windows.yml"
+  pull_request:
+    paths:
+      - "adplus/restyle/**"
+      - "app/**"
+      - "frontend/**"
+      - "scripts/restyle_smoke.py"
+      - "requirements*.txt"
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ffmpeg
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r vendor/openmontage/requirements.txt -r requirements-adplus.txt -r requirements-restyle.txt
+
+      - name: Restyle smoke (create -> analyze -> plan)
+        run: python scripts/restyle_smoke.py
+
+      - name: Focused backend tests
+        run: |
+          python -m unittest -v tests.test_restyle_plan tests.test_restyle_store tests.test_restyle_segment tests.test_project_store
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Frontend build
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+  # Installer build is staged separately: add PyInstaller sidecar + Tauri NSIS
+  # after the test job is green. See docs/windows-build-plan.md.
+
+  build-backend:
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r vendor/openmontage/requirements.txt -r requirements-adplus.txt -r requirements-restyle.txt
+          pip install pyinstaller
+
+      - name: Build sidecar
+        run: python scripts/build_backend.py
+
+      - name: Smoke sidecar health
+        shell: pwsh
+        run: |
+          $exe = "app/desktop/binaries/backend/adplus-backend/adplus-backend.exe"
+          $home = Join-Path $env:RUNNER_TEMP "adplus-home"
+          New-Item -ItemType Directory -Force -Path $home | Out-Null
+          $env:ADPLUS_HOME = $home
+          $env:OPENMONTAGE_HOME = (Resolve-Path "app/desktop/resources/vendor/openmontage").Path
+          $env:OPENMONTAGE_PROJECTS_DIR = Join-Path $home "projects"
+          $env:OPENMONTAGE_UPLOADS_DIR = Join-Path $home "uploads"
+          $outLog = Join-Path $env:RUNNER_TEMP "backend.out.log"
+          $errLog = Join-Path $env:RUNNER_TEMP "backend.err.log"
+          $p = Start-Process -FilePath $exe -ArgumentList "--no-window","--port","8777" -PassThru -RedirectStandardError $errLog -RedirectStandardOutput $outLog -NoNewWindow
+          try {
+            $ok = $false
+            for ($i = 0; $i -lt 30; $i++) {
+              Start-Sleep -Seconds 1
+              try {
+                $health = Invoke-RestMethod -Uri "http://127.0.0.1:8777/api/health" -TimeoutSec 2
+                if ($health.ok) { $ok = $true; break }
+              } catch {}
+            }
+            if (-not $ok) {
+              Get-Content $outLog -ErrorAction SilentlyContinue
+              Get-Content $errLog -ErrorAction SilentlyContinue
+              throw "sidecar health failed"
+            }
+            Write-Host "sidecar health OK"
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adplus-backend-windows
+          path: app/desktop/binaries/backend/adplus-backend
+          retention-days: 7
