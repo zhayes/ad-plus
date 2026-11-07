@@ -40,7 +40,7 @@ def _resolve(value: str | None) -> Path | None:
 
 def _rel(path: Path) -> str:
     try:
-        return str(path.resolve().relative_to(PROJECTS.parent.resolve()))
+        return path.resolve().relative_to(PROJECTS.parent.resolve()).as_posix()
     except (ValueError, OSError):
         return str(path)
 

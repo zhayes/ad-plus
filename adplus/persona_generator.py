@@ -97,7 +97,7 @@ def generate_candidates(
             continue
         candidates.append({
             "index": index,
-            "path": str(path.resolve().relative_to(UPLOADS.parent.resolve())),
+            "path": path.resolve().relative_to(UPLOADS.parent.resolve()).as_posix(),
             "filename": path.name,
         })
     if not candidates:

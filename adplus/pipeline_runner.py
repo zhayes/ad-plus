@@ -268,7 +268,7 @@ def complete_render(
     duration = round(float((data.get("format") or {}).get("duration") or 0), 3)
     width, height = video.get("width"), video.get("height")
     resolution = f"{width}x{height}" if width and height else "unknown"
-    rel = str(path.resolve().relative_to(PROJECTS.parent.resolve())) if str(path.resolve()).startswith(str(PROJECTS.parent.resolve())) else str(path)
+    rel = path.resolve().relative_to(PROJECTS.parent.resolve()).as_posix() if str(path.resolve()).startswith(str(PROJECTS.parent.resolve())) else str(path)
 
     label_check = None
     if product_id:

@@ -153,7 +153,7 @@ def _watch(project_id: str, job_id: str, output: Path) -> None:
     version = project_store.ensure_version(project_id)
     if version is None:
         return
-    rel = str(output.resolve().relative_to(project_store.PROJECTS.parent.resolve()))
+    rel = output.resolve().relative_to(project_store.PROJECTS.parent.resolve()).as_posix()
     version["render"] = {
         "path": rel,
         "width": 1080,

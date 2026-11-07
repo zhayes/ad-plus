@@ -21,7 +21,7 @@ def _read(path: Path) -> dict[str, Any] | None:
 
 def _workspace_rel(path: Path) -> str:
     try:
-        return str(path.resolve().relative_to(project_store.PROJECTS.parent.resolve()))
+        return path.resolve().relative_to(project_store.PROJECTS.parent.resolve()).as_posix()
     except ValueError:
         return str(path)
 
