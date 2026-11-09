@@ -30,7 +30,6 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent.parent
 MODEL_DIR = Path(os.environ.get("ADPLUS_FACE_MODEL_DIR") or ROOT / "assets" / "models")
 FACE_MODEL = MODEL_DIR / "blaze_face_short_range.tflite"
-LANDMARK_MODEL = MODEL_DIR / "face_landmarker.task"
 FFMPEG = os.environ.get("ADPLUS_FFMPEG") or "ffmpeg"
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
 
