@@ -124,12 +124,12 @@ jobs:
         shell: pwsh
         run: |
           $exe = "app/desktop/binaries/backend/adplus-backend/adplus-backend.exe"
-          $home = Join-Path $env:RUNNER_TEMP "adplus-home"
-          New-Item -ItemType Directory -Force -Path $home | Out-Null
-          $env:ADPLUS_HOME = $home
+          $appHome = Join-Path $env:RUNNER_TEMP "adplus-home"
+          New-Item -ItemType Directory -Force -Path $appHome | Out-Null
+          $env:ADPLUS_HOME = $appHome
           $env:OPENMONTAGE_HOME = (Resolve-Path "app/desktop/resources/vendor/openmontage").Path
-          $env:OPENMONTAGE_PROJECTS_DIR = Join-Path $home "projects"
-          $env:OPENMONTAGE_UPLOADS_DIR = Join-Path $home "uploads"
+          $env:OPENMONTAGE_PROJECTS_DIR = Join-Path $appHome "projects"
+          $env:OPENMONTAGE_UPLOADS_DIR = Join-Path $appHome "uploads"
           $outLog = Join-Path $env:RUNNER_TEMP "backend.out.log"
           $errLog = Join-Path $env:RUNNER_TEMP "backend.err.log"
           $p = Start-Process -FilePath $exe -ArgumentList "--no-window","--port","8777" -PassThru -RedirectStandardError $errLog -RedirectStandardOutput $outLog -NoNewWindow
