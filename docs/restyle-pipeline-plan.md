@@ -292,6 +292,82 @@ v1 总计约 **16–22 个工作日**（不含 L2 换版型）。
 
 ---
 
+## 6.5 口播 / 旁白自动判断（虚拟人前置）
+
+不是所有广告都需要对口型。很多改写片是**背景旁白**，人物只是展示/反应；如果每镜都做 lip-sync，会浪费时间、钱，还会把嘴型做坏。
+
+### 四种镜头模式
+
+| 模式 | 判断 | 虚拟人处理 |
+|---|---|---|
+| `on_camera` | 有语音 + 人脸可见 + 嘴部有明显运动 / 与音频相关 | 需要口型同步（avatar/lip-sync） |
+| `voiceover` | 有语音 + 人脸不可见，或人脸可见但嘴基本不动 | 不需要口型；虚拟人做展示/反应即可 |
+| `no_speech` | 该镜头没有语音（纯音乐/环境声/静音） | 不需要口型，也不需要音频替换 |
+| `unknown` | 人脸/嘴部检测不可用或置信度低 | 出预览，人工确认；默认不自动 lip-sync |
+
+### 检测信号
+
+1. **音频**：VAD / ASR（`transcriber` / faster-whisper），得到语音区间；
+2. **人脸**：`face_tracker`（MediaPipe/OpenCV），逐镜判断是否可见；
+3. **嘴部运动**：face landmarks 的嘴开合方差，和语音能量做相关；
+4. **画面**：商品特写/腿部特写通常没有人脸 → 直接 `voiceover`/`no_speech`。
+
+### 数据模型
+
+```json
+{
+  "shots": [
+    {
+      "id": "s03",
+      "speech": {
+        "mode": "on_camera",
+        "confidence": 0.82,
+        "face_visible": true,
+        "mouth_motion": 0.61,
+        "speech_segments": [[2.9, 4.6]]
+      }
+    }
+  ]
+}
+```
+
+plan：
+
+```json
+{
+  "cast": {
+    "lip_sync": {"mode": "auto"}
+  },
+  "audio": {"mode": "keep"}
+}
+```
+
+- `auto`：按 shot 的 `speech.mode` 决定；
+- `on`：强制口型；
+- `off`：全部不做口型（纯旁白/展示片）。
+
+### 虚拟人流程
+
+```text
+shot.speech.mode
+  ├─ on_camera  → 生成虚拟人口播 / lip-sync
+  ├─ voiceover  → 生成虚拟人展示镜头，不需要对口型
+  ├─ no_speech  → 只换人物外观，不动音频
+  └─ unknown    → 预览 + 人工选
+```
+
+这样可以避免：
+
+- 背景旁白镜头也做 lip-sync；
+- 腿部/商品特写强行找脸；
+- 嘴部不动却生成假口型。
+
+### 当前依赖
+
+- `face_tracker` 当前 `unavailable`（缺 mediapipe/opencv）；需要安装或换本地人脸检测；
+- `transcriber` 需要 faster-whisper；
+- 没有这些依赖时，先按 `no_speech` / `unknown` 处理，不自动 lip-sync。
+
 ## 7. 质量门
 
 - `safe`：自动换；
