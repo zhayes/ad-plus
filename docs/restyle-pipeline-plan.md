@@ -155,6 +155,35 @@ canonical artifacts
 - 时序中值/光流；
 - 成本 0，离线。
 
+### 4.5 Provider 策略：MiniMax-first（可选）
+
+可以只**启用** MiniMax，但不建议把代码写成“只支持 MiniMax”。
+
+现状：
+
+- `minimax_video` 已注册，key 为空；
+- 能力是 `text_to_video / image_to_video / first_last_frame_to_video / reference_to_video`，**没有 `video_edit`**；
+- 所以换装只能走 `reference_to_video`：给目标服装参考图，整段重生成；
+- 这会改商品/手/背景，必须本地商品 mask 回贴 + QA，不能直接交付。
+
+推荐：
+
+| 层 | 做法 |
+|---|---|
+| 产品配置 | `RESTYLE_PROVIDERS=minimax`，v1 只启用 MiniMax |
+| 代码 | 保留 provider 接口；不删其它 adapter，只是禁用 |
+| 本地 | 保留 L1 作为离线/失败兜底 |
+| 质量门 | MiniMax 只用于 `review`/hero；safe 走本地 L1；商品/手镜头 keep |
+| 未来 | 如果 MiniMax 出真正的 video_edit/区域重绘，再加 `video_edit` capability |
+
+只支持一家的代价：
+
+- 没有第二家兜底，API 故障/改版/涨价都直接卡住；
+- 商品保真只能靠本地合成，不能靠模型；
+- 真实人物审核策略由一家决定。
+
+**结论**：可以“MiniMax-only”作为商业选择，但架构上保留 provider 抽象 + 本地 L1；不要 hardcode。
+
 ### 4.4 生成引擎（M0b）
 
 先用现有 `atlas_video`：
