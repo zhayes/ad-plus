@@ -258,7 +258,8 @@ projects/<id>/restyle/
 | 阶段 | 时间 | 交付 | 状态 |
 |---|---|---|---|
 | **M-1 审计** | 1–2 天 | capability audit + gap list + endpoint | ✅ 2026-11-09 |
-| **M0a 本地 L1 核心** | 2–3 天 | LAB 换色/羽化/商品排除 + 单测 | 🟡 核心已写，s03 预览验证；mask 仍会带到膝盖 |
+| **M0a 本地 L1 核心** | 2–3 天 | LAB 换色/羽化/商品排除 + 单测 | ✅ 核心已写，s03 预览验证；mask 仍会带到膝盖 |
+| **M-0.5 语音/人脸检测** | 1–2 天 | `speech.py` + MediaPipe face + 音频 RMS + 单测 | ✅ 22 镜已跑出 on_camera/voiceover/no_speech/unknown |
 | **M0b 生成引擎 benchmark** | 2–3 天 | MiniMax H3 4s 单镜实测 | ❌ 换装成功，但结构/背景/字幕被重生成；No-Go 主链路 |
 | **M1 mask 管线** | 3–4 天 | garment mask 来源 + 缓存 + 风险分级 | 待 M0 |
 | **M2 静帧预览** | 3–4 天 | `/frame` + UI Before/After | 待 M1 |
@@ -364,9 +365,60 @@ shot.speech.mode
 
 ### 当前依赖
 
-- `face_tracker` 当前 `unavailable`（缺 mediapipe/opencv）；需要安装或换本地人脸检测；
-- `transcriber` 需要 faster-whisper；
-- 没有这些依赖时，先按 `no_speech` / `unknown` 处理，不自动 lip-sync。
+- MediaPipe Tasks + OpenCV 已装；人脸检测模型已放 `assets/models/`；
+- `transcriber` 需要 faster-whisper（可选，当前未接入）；
+- 当前实现用**音频 RMS + 人脸检测 + 下半脸帧差**，先跑出 speech mode；ASR 只用于后续提高置信度。
+
+## 6.6 三种替换模式 A/B/C：让用户选
+
+可以三种都支持，但**不是三条 pipeline**，而是一条 pipeline 里的三个 provider/模式。用户按项目选，系统按镜头给建议。
+
+| 模式 | 做什么 | 保留原表演 | 保留结构/商品 | 现有基础 | 建议 |
+|---|---|---|---|---|---|
+| **A. 虚拟人重演** | 生成虚拟 presenter 重新说/演 | ❌ 重新演 | 中：商品 B-roll 可保留 | `avatar-spokesperson` + `personas` | ✅ 先做 |
+| **B. 原表演换脸/换身体** | 保留动作/口型，替换脸/身体 | ✅ | 高 | 缺 face swap/身体工具 | ⏳ 后做 |
+| **C. 视频模型重生成** | MiniMax 等按参考生成新片 | ❌ | 低：结构/背景/字幕会漂 | MiniMax 已配 | ⚠️ 只做 hero/二创 |
+
+### 用户怎么选
+
+- 先选 **项目级默认模式**；
+- 每个镜头可以覆盖；
+- UI 显示每种模式的“会变什么/不会变什么”，不假装三者等价。
+
+### plan 字段
+
+```json
+{
+  "cast": {
+    "replacement": {
+      "mode": "avatar",
+      "persona_id": "p_xxx",
+      "lip_sync": {"mode": "auto"}
+    }
+  },
+  "overrides": {
+    "s03": {"replacement": {"mode": "keep"}}
+  }
+}
+```
+
+### 自动建议
+
+| 镜头条件 | 建议 |
+|---|---|
+| `speech.mode=on_camera` + 虚拟人 | A（avatar + lip-sync） |
+| `speech.mode=voiceover` + 虚拟人 | A（只展示，不对口型） |
+| 商品特写 / 手部 / 接触家具 | keep 或本地 L1 |
+| 无商品、允许改结构、hero | C |
+| 需要原表演只换脸 | B（需要 face swap 工具） |
+
+### 实施顺序
+
+1. **A**：复用 persona/avatar/lip_sync；先做 5s 虚拟人口播样片；
+2. **C**：MiniMax 已实测，作为 hero/二创模式；
+3. **B**：新增 face swap/身体替换工具后再开；工作量最大。
+
+> 支持 A/B/C 是产品选择，不是三套编排。底层仍然是一条 pipeline + selector + 质量门。
 
 ## 7. 质量门
 

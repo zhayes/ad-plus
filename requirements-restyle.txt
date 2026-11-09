@@ -10,6 +10,8 @@
 
 opencv-python-headless>=4.10
 onnxruntime>=1.18
+mediapipe>=0.10.30        # MediaPipe Tasks face detector (speech mode)
+# faster-whisper>=1.0     # optional: transcript/VAD refinement (large download)
 numpy>=2.0
 Pillow>=11
 
