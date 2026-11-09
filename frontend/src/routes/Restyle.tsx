@@ -10,28 +10,31 @@ import type { RestyleSummary } from "../lib/types";
 export default function Restyle() {
   const navigate = useNavigate();
   const [items, setItems] = createSignal<RestyleSummary[]>([]);
-  const [rights, setRights] = createSignal(false);
   const [busy, setBusy] = createSignal(false);
   const [dragging, setDragging] = createSignal(false);
   const [error, setError] = createSignal("");
   let input: HTMLInputElement | undefined;
+
+  const messageFor = (err: unknown, fallback: string) => {
+    const text = err instanceof Error ? err.message : fallback;
+    if (text.includes("Not Found") || text.includes("404")) {
+      return "后端还没加载改写接口，重启 Ad+ 后再试";
+    }
+    return text || fallback;
+  };
 
   const load = async () => {
     try {
       const data = await endpoints.restyles();
       setItems(data.restyles ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      setError(messageFor(err, "加载失败"));
     }
   };
 
   onMount(() => void load());
 
   const ingest = async (file: File) => {
-    if (!rights()) {
-      setError("先确认你拥有这条视频和人物肖像的使用权");
-      return;
-    }
     setBusy(true);
     setError("");
     try {
@@ -43,7 +46,7 @@ export default function Restyle() {
       });
       navigate(`/restyle/${created.restyle.project.project_id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "创建失败");
+      setError(messageFor(err, "创建失败"));
     } finally {
       setBusy(false);
     }
@@ -108,15 +111,6 @@ export default function Restyle() {
             <Button size="sm" variant="primary" loading={busy()} onClick={() => input?.click()}>
               选择视频
             </Button>
-            <label class="flex cursor-pointer items-center gap-2 text-[11px] text-dim">
-              <input
-                type="checkbox"
-                checked={rights()}
-                onChange={(event) => setRights(event.currentTarget.checked)}
-                class="h-3.5 w-3.5 accent-[var(--color-accent)]"
-              />
-              我确认拥有该视频及人物肖像的使用权
-            </label>
           </div>
           <Show when={error()}>
             <div class="mt-3 text-[11px] text-bad">{error()}</div>
