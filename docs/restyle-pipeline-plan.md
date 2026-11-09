@@ -186,14 +186,21 @@ canonical artifacts
 
 ### 4.4 生成引擎（M0b）
 
-先用现有 `atlas_video`：
+Atlas / Runway 的 key **暂时拿不到**，所以它们从 v1 关键路径移除，只保留脚本备用。
 
-- model: `google/gemini-omni-flash/video-edit`
-- 720p，$0.14/s
-- 输入：`video_path` + `reference_images` + prompt
-- 脚本：[restyle_edit_benchmark.py](../scripts/restyle_edit_benchmark.py)
+M0b 改为两条路：
 
-如果 Atlas 不行，再评估阿里云/腾讯云/Runway/Vidu；**不先写 SDK**。
+1. **有 MiniMax key**：用 `minimax_video` 的 `reference_to_video` 跑 3 镜；
+   - 输入：原视频/镜头 + 目标服装参考图 + “只换衣服、保留商品/手/背景/节奏”的 prompt；
+   - 整段会重生成，必须本地商品 mask 回贴 + QA；
+   - 不能当主链路，只能做 `review`/hero。
+2. **没有任何视频 key**：跳过云端，直接走本地 L1：
+   - `bg_remove` / rembg 人像 mask；
+   - 颜色/区域 + 人工画笔得到 garment mask；
+   - [outfit.py](../adplus/restyle/outfit.py) 换色；
+   - 先出静帧，再谈视频。
+
+> 不把 Atlas/Runway 当阻塞项。没有 key 就本地，先做出可控的 L1 预览。
 
 ---
 
@@ -249,7 +256,7 @@ projects/<id>/restyle/
 | 阶段 | 时间 | 交付 | 状态 |
 |---|---|---|---|
 | **M-1 审计** | 1–2 天 | capability audit + gap list + endpoint | ✅ 2026-11-09 |
-| **M0a 本地 L1 核心** | 2–3 天 | LAB 换色/羽化/商品排除 + 单测 | 🟡 核心已写，待接 mask |
+| **M0a 本地 L1 核心** | 2–3 天 | LAB 换色/羽化/商品排除 + 单测 | 🟡 核心已写，s03 预览验证；mask 仍会带到膝盖 |
 | **M0b 生成引擎 benchmark** | 2–3 天 | Atlas video_edit 跑 3 镜，和本地 L1 对比 | ⛔ 缺 API key |
 | **M1 mask 管线** | 3–4 天 | garment mask 来源 + 缓存 + 风险分级 | 待 M0 |
 | **M2 静帧预览** | 3–4 天 | `/frame` + UI Before/After | 待 M1 |
@@ -326,7 +333,15 @@ v1 总计约 **16–22 个工作日**（不含 L2 换版型）。
 - `GET /api/restyle/capabilities`：API；
 - `scripts/restyle_edit_benchmark.py`：Atlas video_edit benchmark（缺 key 时明确报阻塞）；
 - `adplus/restyle/outfit.py`：LAB 换色/羽化/商品排除核心；
-- `tests/test_restyle_outfit.py` / `tests/test_restyle_capabilities.py`。
+- `tests/test_restyle_outfit.py` / `tests/test_restyle_capabilities.py`；
+- `scripts/restyle_local_preview.py`：无 key 的 s03 本地预览；
+- 预览结果：`docs/verification/restyle-spike/l1_prototype_s03.jpg`。
+
+s03 预览结论：
+
+- 白色睡衣可以稳定换成深青色；
+- 商品桶像素未被改；
+- 但颜色 seed mask 会把膝盖高光带进去（右图膝盖有一小块青色），说明 **M1 必须有语义 garment mask 或人工画笔**，不能只靠颜色。
 
 ### 下一步（按顺序）
 
