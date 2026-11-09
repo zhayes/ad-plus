@@ -340,6 +340,19 @@ Windows 是主平台，P1 的 macOS 验证不能代表 Windows 可交付。已�
 
 结论：**W0（Windows 安装包 spike）优先于 P2**。W0 不过，不继续做 Windows 主平台的 P2。
 
+## 10.1 Windows CI 绿灯（2026-11-09）
+
+`windows-restyle` #7（`fa2d6e4`）两个 job 都通过：
+
+- `test`：Python 3.12 + ffmpeg + 读片 smoke + 20 个 focused tests + 前端 build；
+- `build-backend`：PyInstaller 构建 `adplus-backend.exe`，启动后 `/api/health` 通过，artifact 已上传。
+
+这证明 **Windows 后端 / 依赖 / sidecar 能跑**，但还不等于桌面 App 可用：
+
+- 还没有 NSIS 安装包；
+- 还没有随包 ffmpeg / tesseract / 字体；
+- 还没在干净 Windows 机器安装并打开工作台。
+
 ## 11. 下一步
 
 1. **W0（优先）**：Windows 安装包 spike——Tauri NSIS/MSI + Python 3.12 sidecar + 随包 ffmpeg/tesseract/字体；在干净 Windows 机器跑参考片读片。

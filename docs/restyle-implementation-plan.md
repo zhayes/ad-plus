@@ -126,7 +126,7 @@ Windows 是主运行平台，macOS 是开发 / 次要平台。所有新能力先
 - **CI**：GitHub Actions `windows-latest` 跑后端测试 + 参考片读片；`macos-latest` 跑 UI 构建。没有 Windows CI 前，不宣称 Windows 可用。
 - **许可**：ffmpeg 的 LGPL/GPL、分割模型许可、tesseract（Apache-2.0）、字体（OFL）都要在打包前确认；RVM 是 GPL-3.0，商业分发需谨慎。
 
-当前状态（2026-11-08）：代码已去掉对 Vision 的硬依赖，加入 `PersonSegmenter` 抽象、POSIX 路径、Windows 子进程 flags；新增 `app/desktop/tauri.windows.conf.json`（NSIS + `.ico`）、`scripts/build_backend.py`（PyInstaller）、`scripts/restyle_smoke.py` 和 `.github/workflows/windows.yml`（test + build-backend）。Rust shell 已加 Windows sidecar 启动逻辑。**但 CI 还没在 GitHub 上跑过，安装包/Tauri NSIS 也未实际构建**，属于 W0 剩余工作。
+当前状态（2026-11-09）：`windows-restyle` #7 绿灯。`test` 在 Windows 3.12 上跑通读片 smoke、20 个 focused tests、前端 build；`build-backend` 成功构建 `adplus-backend.exe` 并通过 `/api/health`。代码已去掉对 Vision 的硬依赖，加入 `PersonSegmenter` 抽象、POSIX 路径、Windows 子进程 flags；`app/desktop/tauri.windows.conf.json`（NSIS + `.ico`）、`scripts/build_backend.py`、`scripts/restyle_smoke.py` 已就位。**剩余：NSIS 安装包、随包 ffmpeg/tesseract/字体、干净 Windows 机器安装验证。**
 
 ---
 
