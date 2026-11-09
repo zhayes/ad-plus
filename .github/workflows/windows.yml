@@ -5,18 +5,20 @@ on:
   push:
     branches: [main, "feat/**"]
     paths:
-      - "adplus/restyle/**"
+      - "adplus/**"
       - "app/**"
       - "frontend/**"
-      - "scripts/restyle_smoke.py"
+      - "tests/**"
+      - "scripts/**"
       - "requirements*.txt"
       - ".github/workflows/windows.yml"
   pull_request:
     paths:
-      - "adplus/restyle/**"
+      - "adplus/**"
       - "app/**"
       - "frontend/**"
-      - "scripts/restyle_smoke.py"
+      - "tests/**"
+      - "scripts/**"
       - "requirements*.txt"
 
 jobs:
