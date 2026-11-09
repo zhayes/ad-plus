@@ -42,6 +42,7 @@ from adplus import local_tools
 from adplus import oms_tools
 from adplus import formats
 from adplus import capabilities as model_caps
+from adplus.restyle import capabilities as restyle_capability
 from adplus.restyle import segment as restyle_segment
 from adplus.restyle import store as restyle_store
 from app import capabilities, config_store, env_utils, pi_bridge, secrets_store
@@ -2071,6 +2072,19 @@ class RestyleCreatePayload(BaseModel):
 class RestylePlanPayload(BaseModel):
     revision: int | None = None
     patch: dict[str, Any]
+
+
+@app.get("/api/restyle/capabilities")
+def restyle_capabilities(refresh: bool = False) -> dict[str, Any]:
+    if refresh:
+        restyle_capability.audit.cache_clear()
+    data = restyle_capability.audit()
+    return {
+        "summary": restyle_capability.summary(),
+        "tools": data["tools"],
+        "pipelines": data["pipelines"],
+        "gaps": data["gaps"],
+    }
 
 
 @app.get("/api/restyle/backends")
