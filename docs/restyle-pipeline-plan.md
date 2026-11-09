@@ -155,7 +155,7 @@ canonical artifacts
 - 时序中值/光流；
 - 成本 0，离线。
 
-### 4.5 Provider 策略：MiniMax-first（可选）
+### 4.5 Provider 策略：MiniMax-first（测试结果：No-Go 主链路）
 
 可以只**启用** MiniMax，但不建议把代码写成“只支持 MiniMax”。
 
@@ -182,7 +182,9 @@ canonical artifacts
 - 商品保真只能靠本地合成，不能靠模型；
 - 真实人物审核策略由一家决定。
 
-**结论**：可以“MiniMax-only”作为商业选择，但架构上保留 provider 抽象 + 本地 L1；不要 hardcode。
+**实测（2026-11-09）**：MiniMax H3 `reference_to_video` 能把白睡衣换成深青针织，但 4s 内会重新生成场景/字幕/镜头，商品桶也有变化；输出 4.459s vs 输入 4.0s。证据见 [minimax/README.md](verification/restyle-spike/minimax/README.md)。
+
+**结论**：MiniMax 可以保留为“测试/hero 参考”provider，但**不能作为“同一条广告只换装”的主链路**。v1 主链路必须是本地 L1 + 语义 mask；MiniMax-only 也不能替代本地控制面。
 
 ### 4.4 生成引擎（M0b）
 
@@ -257,7 +259,7 @@ projects/<id>/restyle/
 |---|---|---|---|
 | **M-1 审计** | 1–2 天 | capability audit + gap list + endpoint | ✅ 2026-11-09 |
 | **M0a 本地 L1 核心** | 2–3 天 | LAB 换色/羽化/商品排除 + 单测 | 🟡 核心已写，s03 预览验证；mask 仍会带到膝盖 |
-| **M0b 生成引擎 benchmark** | 2–3 天 | Atlas video_edit 跑 3 镜，和本地 L1 对比 | ⛔ 缺 API key |
+| **M0b 生成引擎 benchmark** | 2–3 天 | MiniMax H3 4s 单镜实测 | ❌ 换装成功，但结构/背景/字幕被重生成；No-Go 主链路 |
 | **M1 mask 管线** | 3–4 天 | garment mask 来源 + 缓存 + 风险分级 | 待 M0 |
 | **M2 静帧预览** | 3–4 天 | `/frame` + UI Before/After | 待 M1 |
 | **M3 单镜预演** | 3–4 天 | 3s 低清 + 时序稳定 | 待 M2 |
