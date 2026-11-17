@@ -1,0 +1,22 @@
+# Restyle runtime dependencies.
+#
+# Windows is the primary target: use Python 3.12 for the packaged sidecar.
+# Do not install this file into the macOS Python 3.14 dev venv blindly;
+# onnxruntime/mediapipe wheel availability differs per interpreter.
+#
+# Install with:
+#   py -3.12 -m venv .venv-restyle
+#   .venv-restyle\Scripts\pip install -r requirements-restyle.txt
+
+opencv-python-headless>=4.10
+onnxruntime>=1.18
+mediapipe>=0.10.30        # MediaPipe Tasks face detector (speech mode)
+# faster-whisper>=1.0     # optional: transcript/VAD refinement (large download)
+numpy>=2.0
+Pillow>=11
+
+# Optional lightweight backend; verify a Windows py3.12 wheel before enabling.
+# mediapipe>=0.10.14
+
+# macOS-only optional quality backend.
+# pyobjc-framework-Vision>=10.3 ; sys_platform == "darwin"

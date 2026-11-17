@@ -1,0 +1,23 @@
+{
+  "name": "背心",
+  "sku": "",
+  "brand": "YAOHEI",
+  "label_text": "YAOHEI",
+  "category": "服饰/背心/内衣",
+  "hero_path": "uploads/20261106/_20261105163247_37_376-beaae481.png",
+  "detail_paths": [],
+  "tags": [
+    "无痕",
+    "吸汗，透气，冰丝"
+  ],
+  "status": "locked",
+  "locked": true,
+  "rights": {
+    "commercial_use": false,
+    "ai_reference_allowed": false,
+    "note": ""
+  },
+  "id": "prod_67ffff0c",
+  "created_at": "2026-11-06T15:25:20+0800",
+  "updated_at": "2026-11-06T15:25:20+0800"
+}

@@ -50,3 +50,5 @@ htmlcov/
 /app/desktop/resources/*
 !/app/desktop/resources/.gitkeep
 .tmp-appdata/
+docs/images/recreate/
+docs/images/ui/

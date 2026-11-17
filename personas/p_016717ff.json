@@ -1,0 +1,43 @@
+{
+  "name": "小雨",
+  "kind": "video",
+  "status": "ready",
+  "source_path": "uploads/personas/e494b3661b/candidate_2.png",
+  "preview_path": "uploads/personas/e494b3661b/candidate_2.png",
+  "description": "人物全身，女性，25岁，中国人，长发，青春有活力。",
+  "gender": "",
+  "age_range": "",
+  "look": "",
+  "wardrobe": "",
+  "scene": "",
+  "tags": [],
+  "voice": {
+    "provider": "minimax",
+    "voice_id": "",
+    "language": "zh-CN",
+    "speed": 1.0,
+    "sample_path": ""
+  },
+  "base_videos": [
+    {
+      "id": "base_1794060017",
+      "path": "personas/p_016717ff/base_1794059964.mp4",
+      "framing": "half_body",
+      "duration_s": 5.0,
+      "resolution": "",
+      "silent": true
+    }
+  ],
+  "rights": {
+    "ai_allowed": false,
+    "consent": false,
+    "commercial_use": false,
+    "note": "",
+    "expires_at": ""
+  },
+  "providers": {},
+  "id": "p_016717ff",
+  "asset_paths": [],
+  "created_at": "2026-11-07T21:59:12+0800",
+  "updated_at": "2026-11-07T22:04:00+0800"
+}
