@@ -151,7 +151,12 @@ def proposal_payload(project_id: str) -> dict[str, Any] | None:
     packet = _read(root / "artifacts" / "proposal_packet.json") or {}
     scene_plan = _read(root / "artifacts" / "scene_plan.json")
     quote = project_store.latest_quote(project_id) or {}
+    project_settings = project.get("production_settings") or {}
+    if isinstance(quote, dict) and isinstance(project_settings, dict):
+        quote["stale"] = quote.get("settings_revision") is None or int(quote.get("settings_revision") or 0) != int(project_settings.get("revision") or 1)
     quote_status = str(quote.get("status") or "")
+    if quote.get("stale"):
+        quote_status = "ready"
     if quote_status == "approved":
         status = "approved"
     elif quote_status == "rejected":

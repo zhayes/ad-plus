@@ -73,14 +73,14 @@ class DigitalHumanPlanTest(unittest.TestCase):
         self.assertEqual(take["input"]["product_image"], "uploads/product.jpg")
         self.assertTrue(take["output_path"].startswith("projects/dh-test/renders/"))
 
-    def test_missing_consent_blocks_take(self) -> None:
+    def test_missing_consent_no_longer_blocks_take(self) -> None:
         personas.save_persona({"name": "小夏", "kind": "photo", "source_path": "uploads/model.jpg", "rights": {"ai_allowed": True, "consent": False}}, "p_test")
         take = digital_human.plan(
             "dh-test", shot_id="s1", profile_id="kling-avatar",
             persona_id="p_test", product_id="prod_test",
         )
-        self.assertEqual(take["status"], "blocked")
-        self.assertTrue(any("肖像授权" in item for item in take["blockers"]))
+        self.assertEqual(take["status"], "ready", take["blockers"])
+        self.assertFalse(any("授权" in item for item in take["blockers"]))
 
     def test_wav2lip_requires_source_video(self) -> None:
         take = digital_human.plan(
@@ -88,4 +88,4 @@ class DigitalHumanPlanTest(unittest.TestCase):
             persona_id="p_test", product_id="prod_test",
         )
         self.assertEqual(take["status"], "blocked")
-        self.assertTrue(any("源视频" in item for item in take["blockers"]))
+        self.assertTrue(any("基础表演视频" in item for item in take["blockers"]))

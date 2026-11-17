@@ -33,6 +33,14 @@ export interface Quote {
   assumptions?: string[];
   line_items: QuoteLine[];
   created_at: string;
+  settings_revision?: number;
+  budget_usd?: number;
+  audio_budget_usd?: number;
+  video_budget_usd?: number;
+  over_budget?: boolean;
+  over_audio_budget?: boolean;
+  over_video_budget?: boolean;
+  stale?: boolean;
 }
 
 export interface Approval {
@@ -49,7 +57,7 @@ export interface Approval {
 export interface Job {
   id: string;
   project_id: string;
-  kind: "render" | "preview" | "tool" | "proposal";
+  kind: "render" | "preview" | "tool" | "proposal" | "asset_generation" | "audio_generation" | "avatar_compose" | string;
   status: "queued" | "running" | "done" | "failed" | "cancelled" | "interrupted";
   stage?: string;
   progress: number;
@@ -122,6 +130,17 @@ export interface CapabilityRow {
   capability: string;
   configured: number;
   total: number;
+}
+
+export interface Skill {
+  slug: string;
+  name: string;
+  description: string;
+  instructions: string;
+  path: string;
+  updated_at: string;
+  valid: boolean;
+  error?: string;
 }
 
 export interface Snapshot {
@@ -229,6 +248,7 @@ export interface ProjectRecord {
   product_id?: string | null;
   format_id?: string | null;
   route?: RouteOption | null;
+  production_settings?: ProductionSettings;
   brief?: ProjectBrief;
   current_version_id?: string | null;
   cover?: string | null;
@@ -260,8 +280,25 @@ export interface Shot {
   product_id?: string | null;
   asset_refs?: Record<string, unknown>;
   generation_spec?: Record<string, unknown>;
+  audio?: ShotAudio;
   shot_language?: Record<string, unknown>;
   timeline?: Record<string, unknown>;
+}
+
+export interface ShotAudio {
+  status: "empty" | "generating" | "ready" | "failed" | "stale" | "not_required" | string;
+  mode?: "external_tts" | "model_native" | "silent" | string;
+  path?: string | null;
+  duration_s?: number | null;
+  provider?: string;
+  voice_id?: string;
+  language?: string;
+  speed?: number;
+  fit?: string;
+  text_hash?: string;
+  audio_hash?: string;
+  audio_revision?: number;
+  error?: string | null;
 }
 
 export interface RenderInfo {
@@ -351,7 +388,21 @@ export interface Persona {
   wardrobe?: string;
   scene?: string;
   tags?: string[];
-  voice?: Record<string, unknown>;
+  voice?: {
+    provider?: string;
+    voice_id?: string;
+    language?: string;
+    speed?: number;
+    sample_path?: string;
+  };
+  base_videos?: {
+    id?: string;
+    path: string;
+    framing?: string;
+    duration_s?: number;
+    resolution?: string;
+    silent?: boolean;
+  }[];
   rights: PersonaRights;
   providers?: Record<string, string>;
   created_at?: string;
@@ -694,11 +745,58 @@ export interface StageRow {
   artifact: string;
 }
 
+
+export interface ProductionSettings {
+  schema_version: number;
+  revision: number;
+  revisions: { audio: number; visual: number };
+  format_id?: string | null;
+  route_id: string;
+  output: {
+    platform: string;
+    aspect: "9:16" | "16:9" | "1:1";
+    duration_s: number;
+    resolution: "480p" | "720p" | "1080p";
+    fps: 24 | 30;
+    captions: boolean;
+  };
+  audio: {
+    mode: "external_tts" | "model_native" | "silent";
+    provider: "local" | "minimax" | "elevenlabs" | "heygen" | string;
+    voice_id: string;
+    language: string;
+    speed: number;
+    fit: "trim" | "pad" | "stretch";
+    generate_before_video: boolean;
+  };
+  visual: {
+    mode: "auto" | "manual";
+    talking_head_profile?: string | null;
+    broll_profile?: string | null;
+    product_profile?: string | null;
+    allow_fallback: boolean;
+    quality_tier: "draft" | "standard" | "premium";
+  };
+  budget: { total_usd: number; audio_usd: number; video_usd: number };
+  generation: {
+    mode: "auto" | "manual";
+    talking_head_profile?: string | null;
+    broll_profile?: string | null;
+    audio_mode: "external_tts" | "model_native" | "silent";
+    allow_fallback: boolean;
+    quality_tier: "draft" | "standard" | "premium";
+    budget_usd: number;
+  };
+  voice: { source: "persona" | "project" | "model"; override?: Record<string, unknown> | null };
+}
+
 export interface ProductionView {
   project: ProjectRecord;
   route: RouteOption;
   routes: RouteOption[];
   models?: ModelProfile[];
+  settings?: ProductionSettings;
+  settings_summary?: string;
   persona?: Persona | null;
   product?: Product | null;
   brief: PlanBrief;
@@ -717,4 +815,133 @@ export interface ProductionView {
   review: ReviewRecord | null;
   final_review: Record<string, unknown> | null;
   approvals: Record<string, { at?: string; comment?: string }>;
+}
+
+// ---------------------------------------------------------------------------
+// Restyle (改写)
+// ---------------------------------------------------------------------------
+
+export interface RestyleCaption {
+  text: string;
+  bbox?: number[] | null;
+  status?: string;
+}
+
+export interface RestyleShot {
+  id: string;
+  index: number;
+  start_s: number;
+  end_s: number;
+  duration_s: number;
+  keyframe?: string | null;
+  caption?: RestyleCaption;
+  groups?: Record<string, string>;
+  risk?: { score: number; reasons: string[] };
+  suggested?: string;
+}
+
+export interface RestyleGroup {
+  id: string;
+  label: string;
+  shot_ids: string[];
+  thumb?: string | null;
+}
+
+export interface RestyleBlueprint {
+  version: number;
+  video_type: string;
+  shots: RestyleShot[];
+  groups: {
+    scenes: RestyleGroup[];
+    outfits: RestyleGroup[];
+    products: RestyleGroup[];
+    objects: RestyleGroup[];
+  };
+  suggestions?: {
+    change_shot_ids: string[];
+    keep_shot_ids: string[];
+    reason: string;
+  };
+  caption_count?: number;
+}
+
+export interface RestylePlan {
+  revision: number;
+  change_level: "light" | "recommended" | "all" | string;
+  cast?: Record<string, unknown>;
+  scenes?: Record<string, { mode?: string; [key: string]: unknown }>;
+  objects?: Record<string, { mode?: string; [key: string]: unknown }>;
+  product?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  captions?: Record<string, unknown>;
+  overrides?: Record<string, unknown>;
+  updated_at?: string;
+}
+
+export interface RestyleSource {
+  path: string;
+  original_path?: string;
+  hash?: string;
+  probe?: {
+    duration_s?: number;
+    width?: number;
+    height?: number;
+    fps?: number;
+    aspect?: string;
+    has_audio?: boolean;
+  };
+  rights?: { confirmed?: boolean; note?: string };
+}
+
+export interface RestyleSummary {
+  id: string;
+  title: string;
+  status: string;
+  aspect?: string;
+  duration_s?: number;
+  cover?: string | null;
+  shot_count: number;
+  caption_count: number;
+  analyzed: boolean;
+  updated_at?: string | null;
+  source_path?: string | null;
+}
+
+export interface RestyleDetail {
+  project: ProjectRecord;
+  source: RestyleSource | null;
+  blueprint: RestyleBlueprint | null;
+  plan: RestylePlan | null;
+  jobs: Job[];
+}
+
+export interface RecreateStepState {
+  status: "pending" | "running" | "done" | "failed";
+  started_at?: string;
+  finished_at?: string;
+  error?: string;
+}
+
+export interface RecreateSummary {
+  project_id: string;
+  title?: string;
+  created_at?: string;
+  duration_s?: number;
+  next_step?: string | null;
+  steps?: Record<string, RecreateStepState>;
+}
+
+export interface RecreateDetail {
+  project: { project_id: string; title?: string };
+  source: Record<string, unknown> | null;
+  steps: Record<string, RecreateStepState>;
+  next_step: string | null;
+  skeleton: Record<string, unknown> | null;
+  gag: Record<string, unknown> | null;
+  script: Record<string, unknown> | null;
+  board: Record<string, unknown> | null;
+  shots: Record<string, unknown> | null;
+  qa: Record<string, unknown> | null;
+  product: Record<string, unknown> | null;
+  files: { final?: string | null; skeleton?: string | null };
 }

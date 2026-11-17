@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -37,11 +38,18 @@ from adplus import product_composite
 from adplus import canonical_artifacts
 from adplus import request_probe
 from adplus import pipeline_runner
+from adplus import asset_generator
+from adplus import audio_generator
+from adplus import persona_base
 from adplus import local_tools
 from adplus import oms_tools
 from adplus import formats
 from adplus import capabilities as model_caps
-from app import capabilities, config_store, env_utils, pi_bridge, secrets_store
+from adplus.restyle import capabilities as restyle_capability
+from adplus.restyle import segment as restyle_segment
+from adplus.recreate import store as recreate_store
+from adplus.restyle import store as restyle_store
+from app import capabilities, config_store, env_utils, pi_bridge, secrets_store, skills_store
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
 
@@ -183,6 +191,24 @@ def spa_tasks() -> Any:
     return _require_spa()
 
 
+@app.get("/personas")
+@app.get("/personas/{rest:path}")
+def spa_personas(rest: str = "") -> Any:
+    return _require_spa()
+
+
+@app.get("/restyle")
+@app.get("/restyle/{rest:path}")
+def spa_restyle(rest: str = "") -> Any:
+    return _require_spa()
+
+
+@app.get("/recreate")
+@app.get("/recreate/{rest:path}")
+def spa_recreate(rest: str = "") -> Any:
+    return _require_spa()
+
+
 @app.get("/assets")
 def spa_assets_root() -> Any:
     return _require_spa()
@@ -278,6 +304,72 @@ def pi_status() -> dict[str, Any]:
     }
 
 
+class SkillCreatePayload(BaseModel):
+    name: str
+    description: str
+    instructions: str = ""
+
+
+class SkillPatchPayload(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    instructions: str | None = None
+
+
+@app.get("/api/skills")
+def list_skills() -> dict[str, Any]:
+    try:
+        rows = skills_store.list_skills()
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"技能目录不可写：{exc}") from exc
+    return {"skills": rows, "dir": str(skills_store.SKILLS_DIR)}
+
+
+@app.post("/api/skills")
+def create_skill(payload: SkillCreatePayload) -> dict[str, Any]:
+    try:
+        skill = skills_store.save_skill(
+            name=payload.name,
+            description=payload.description,
+            instructions=payload.instructions,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=f"同名技能已存在：{exc}") from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"技能目录不可写：{exc}") from exc
+    return {"skill": skill}
+
+
+@app.patch("/api/skills/{slug}")
+def update_skill(slug: str, payload: SkillPatchPayload) -> dict[str, Any]:
+    try:
+        skill = skills_store.save_skill(slug=slug, **payload.model_dump(exclude_unset=True))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="技能不存在") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail=f"同名技能已存在：{exc}") from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"技能目录不可写：{exc}") from exc
+    return {"skill": skill}
+
+
+@app.delete("/api/skills/{slug}")
+def remove_skill(slug: str) -> dict[str, Any]:
+    try:
+        removed = skills_store.delete_skill(slug)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"技能目录不可写：{exc}") from exc
+    if not removed:
+        raise HTTPException(status_code=404, detail="技能不存在")
+    return {"removed": True}
+
+
 THUMB_DIR = secrets_store.app_data_dir() / "thumbs"
 
 
@@ -301,6 +393,19 @@ async def upload(request: Request, name: str = "") -> dict[str, Any]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"ok": True, **record, "asset": record}
+
+
+@app.post("/api/attach")
+async def attach(request: Request, name: str = "") -> dict[str, Any]:
+    """Chat attachment for non-media files (text, subtitles, PDF…): no asset record."""
+    raw = await request.body()
+    if len(raw) > 2 * 1024**3:
+        raise HTTPException(status_code=413, detail="file too large (2 GB max)")
+    try:
+        record = asset_store.attach_file(raw, name or "attachment")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"ok": True, **record}
 
 
 @app.get("/api/uploads")
@@ -336,7 +441,12 @@ def thumb(path: str, width: int = 360) -> FileResponse:
     return FileResponse(out, media_type="image/jpeg")
 
 
-MEDIA_ROOTS = {"projects": adplus.paths.PROJECTS, "uploads": adplus.paths.UPLOADS}
+MEDIA_ROOTS = {
+    "projects": adplus.paths.PROJECTS,
+    "uploads": adplus.paths.UPLOADS,
+    "personas": adplus.paths.PERSONAS,
+    "products": adplus.paths.PRODUCTS,
+}
 
 
 @app.get("/api/media")
@@ -413,6 +523,7 @@ class ProjectCreatePayload(BaseModel):
     product_id: str | None = None
     format_id: str | None = None
     route: dict[str, Any] | None = None
+    production_settings: dict[str, Any] | None = None
 
 
 class ProjectPatchPayload(BaseModel):
@@ -430,6 +541,8 @@ class ProjectPatchPayload(BaseModel):
     current_version_id: str | None = None
     pipeline_type: str | None = None
     cover: str | None = None
+    route: dict[str, Any] | None = None
+    production_settings: dict[str, Any] | None = None
 
 
 class VersionCreatePayload(BaseModel):
@@ -512,6 +625,7 @@ class PersonaPayload(BaseModel):
     scene: str | None = None
     tags: list[str] | None = None
     voice: dict[str, Any] | None = None
+    base_videos: list[dict[str, Any]] | None = None
     rights: dict[str, Any] | None = None
     providers: dict[str, Any] | None = None
 
@@ -545,6 +659,23 @@ class PipelineCompletePayload(BaseModel):
     render_path: str
     product_id: str | None = None
     approve: bool = True
+
+
+class PersonaBaseVideoPayload(BaseModel):
+    prompt: str = ""
+    duration: int = 5
+    resolution: str = "480p"
+    provider: str = "seedance"
+
+
+class GenerateAssetsPayload(BaseModel):
+    shot_ids: list[str] | None = None
+    force: bool = False
+
+
+class GenerateAudioPayload(BaseModel):
+    shot_ids: list[str] | None = None
+    force: bool = False
 
 
 class PipelineAssetsPayload(BaseModel):
@@ -633,8 +764,11 @@ def _detail_or_404(project_id: str) -> dict[str, Any]:
 
 
 @app.get("/api/projects")
-def projects() -> dict[str, Any]:
-    return {"projects": project_store.list_projects()}
+def projects(include_restyle: bool = False) -> dict[str, Any]:
+    rows = project_store.list_projects()
+    if not include_restyle:
+        rows = [row for row in rows if row.get("format_id") != "reference_restyle"]
+    return {"projects": rows}
 
 
 @app.post("/api/projects")
@@ -846,15 +980,21 @@ def approve_stage(project_id: str, stage: str, payload: dict[str, Any] | None = 
 @app.post("/api/projects/{project_id}/compose")
 def start_compose(project_id: str) -> dict[str, Any]:
     from adplus import production
-    from adplus import local_motion
+    from adplus import asset_compose, asset_generator, local_motion
 
     payload = production.production_payload(project_id)
     if payload is None:
         raise HTTPException(status_code=404, detail="project not found")
-    if payload["route"]["id"] != "local_motion":
-        raise HTTPException(status_code=400, detail="该路线暂未接入自动渲染")
     try:
-        result = local_motion.start(project_id)
+        if payload["route"]["id"] == "local_motion":
+            result = local_motion.start(project_id)
+        elif payload["route"]["id"] in {"avatar_spokesperson", "hybrid"}:
+            result = asset_compose.start(project_id)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="该路线尚未接入自动合成；请先在「素材」为每个镜头绑定或生成素材",
+            )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return result
@@ -1175,6 +1315,59 @@ def complete_pipeline_render(project_id: str, payload: PipelineCompletePayload) 
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"complete render failed: {exc}") from exc
+
+
+@app.post("/api/projects/{project_id}/narration/backfill")
+def backfill_project_narration(project_id: str) -> dict[str, Any]:
+    try:
+        return audio_generator.backfill_narration(project_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="project not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/projects/{project_id}/audio/generate")
+def generate_project_audio(project_id: str, payload: GenerateAudioPayload) -> dict[str, Any]:
+    try:
+        return audio_generator.start(project_id, force=payload.force, shot_ids=payload.shot_ids)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="project not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/projects/{project_id}/shots/{shot_id}/audio")
+def generate_shot_audio(project_id: str, shot_id: str, payload: GenerateAudioPayload | None = None) -> dict[str, Any]:
+    try:
+        return audio_generator.start(project_id, force=bool(payload.force if payload else True), shot_ids=[shot_id])
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="project not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/personas/{persona_id}/base-video")
+def generate_persona_base_video(persona_id: str, payload: PersonaBaseVideoPayload) -> dict[str, Any]:
+    try:
+        return persona_base.generate(
+            persona_id, prompt=payload.prompt, duration=payload.duration, resolution=payload.resolution,
+            provider=payload.provider,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="persona not found") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/projects/{project_id}/assets/generate")
+def generate_project_assets(project_id: str, payload: GenerateAssetsPayload) -> dict[str, Any]:
+    try:
+        return asset_generator.start(project_id, force=payload.force, shot_ids=payload.shot_ids)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="project not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/brands")
@@ -1727,11 +1920,27 @@ def session_artifacts(path: str = "", session_id: str = "") -> dict[str, Any]:
                         if not isinstance(part, dict) or part.get("type") != "toolCall":
                             continue
                         args = str(part.get("arguments") or "")
-                        for token in re.findall(r"[\w./\-]+\.(?:mp4|mov|webm|png|jpe?g|wav|mp3|json|html|js|css)", args):
+                        for token in re.findall(r"[\w./\-]+\.(?:mp4|mov|webm|m4v|png|jpe?g|webp|gif|wav|mp3|m4a|aac|flac|srt|vtt|json|html|js|css)", args):
                             if "projects/" in token:
                                 add(root / token)
         except OSError:
             pass
+
+    # The session log only contains paths the agent explicitly referenced.
+    # Project deliverables in assets/preview are still real artifacts even when
+    # no tool call mentions them (e.g. a labelled character sheet).
+    project_dirs: set[Path] = set()
+    for rel in files:
+        parts = Path(rel).parts
+        if len(parts) >= 3 and parts[0] == "projects":
+            project_dirs.add(root / parts[0] / parts[1])
+    for project_dir in project_dirs:
+        preview = project_dir / "assets" / "preview"
+        if not preview.is_dir():
+            continue
+        for candidate in preview.iterdir():
+            if candidate.is_file() and candidate.suffix.lower() in {ext for exts in MEDIA_EXT.values() for ext in exts}:
+                add(candidate)
 
     rank = {"video": 0, "image": 1, "audio": 2, "doc": 3, "code": 4}
     rows = sorted(files.values(), key=lambda r: (rank.get(r["kind"], 9), -r["mtime"]))
@@ -1876,6 +2085,17 @@ def decide_quote(quote_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     if not project_id:
         raise HTTPException(status_code=400, detail="project_id required")
     approved = bool(payload.get("approved"))
+    if approved:
+        project = project_store.load_project(project_id) or {}
+        settings = project.get("production_settings") or {}
+        latest = project_store.latest_quote(project_id) or {}
+        if latest.get("id") == quote_id:
+            if latest.get("settings_revision") is None or int(latest.get("settings_revision") or 0) != int(settings.get("revision") or 1):
+                raise HTTPException(status_code=409, detail="报价配置已变更，请重新生成报价")
+        if latest.get("id") == quote_id and latest.get("over_budget"):
+            raise HTTPException(status_code=400, detail="报价超过预算上限，不能确认")
+        if latest.get("id") == quote_id and (latest.get("over_audio_budget") or latest.get("over_video_budget")):
+            raise HTTPException(status_code=400, detail="报价超过配音或画面预算，不能确认")
     try:
         record = bridge.decide(
             "quotes", project_id, quote_id,
@@ -2054,6 +2274,172 @@ async def chat_socket(ws: WebSocket) -> None:
             sender.cancel()
         if entry and queue:
             HUB.unsubscribe(entry, queue)
+
+
+class RecreateCreatePayload(BaseModel):
+    path: str
+    title: str | None = None
+    rights_confirmed: bool = False
+
+
+class RecreateStepPayload(BaseModel):
+    params: dict[str, Any] = {}
+
+
+class RecreateOneTakePayload(BaseModel):
+    product: dict[str, Any] = {}
+    preset: dict[str, Any] = {}
+
+
+@app.get("/api/recreate")
+def recreate_list() -> dict[str, Any]:
+    return {"recreates": recreate_store.list_recreates()}
+
+
+@app.post("/api/recreate")
+def recreate_create(payload: RecreateCreatePayload) -> dict[str, Any]:
+    try:
+        record = recreate_store.create(
+            payload.path,
+            title=payload.title,
+            rights_confirmed=bool(payload.rights_confirmed),
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="source video not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"recreate": record}
+
+
+@app.get("/api/recreate/{project_id}")
+def recreate_detail(project_id: str) -> dict[str, Any]:
+    record = recreate_store.detail(project_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="recreate not found")
+    return record
+
+
+@app.post("/api/recreate/{project_id}/steps/{step}")
+def recreate_step(project_id: str, step: str, payload: RecreateStepPayload) -> dict[str, Any]:
+    try:
+        job = recreate_store.start_step(project_id, step, payload.params)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="recreate not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"job": job, "step": step}
+
+
+@app.post("/api/recreate/{project_id}/onetake")
+def recreate_onetake(project_id: str, payload: RecreateOneTakePayload) -> dict[str, Any]:
+    try:
+        job = recreate_store.start_onetake(project_id, {"product": payload.product, "preset": payload.preset})
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="recreate not found") from exc
+    return {"job": job}
+
+
+@app.get("/api/recreate/{project_id}/jobs")
+def recreate_jobs(project_id: str, limit: int = 10) -> dict[str, Any]:
+    from adplus import jobs as job_store
+
+    return {"jobs": job_store.list_jobs(project_id, limit=limit)}
+
+
+class RestyleCreatePayload(BaseModel):
+    path: str
+    title: str | None = None
+    rights_confirmed: bool = False
+
+
+class RestylePlanPayload(BaseModel):
+    revision: int | None = None
+    patch: dict[str, Any]
+
+
+@app.get("/api/restyle/capabilities")
+def restyle_capability_audit(refresh: bool = False) -> dict[str, Any]:
+    if refresh:
+        restyle_capability.audit.cache_clear()
+    data = restyle_capability.audit()
+    return {
+        "summary": restyle_capability.summary(),
+        "tools": data["tools"],
+        "pipelines": data["pipelines"],
+        "gaps": data["gaps"],
+    }
+
+
+@app.get("/api/restyle/backends")
+def restyle_backends() -> dict[str, Any]:
+    return {
+        "platform": sys.platform,
+        "python": sys.version.split()[0],
+        "backends": restyle_segment.available_backends(),
+    }
+
+
+@app.get("/api/restyle")
+def restyle_list() -> dict[str, Any]:
+    return {"restyles": restyle_store.list_restyles()}
+
+
+@app.post("/api/restyle")
+def restyle_create(payload: RestyleCreatePayload) -> dict[str, Any]:
+    try:
+        record = restyle_store.create(
+            payload.path,
+            title=payload.title,
+            rights_confirmed=bool(payload.rights_confirmed),
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="source video not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"restyle": record}
+
+
+@app.get("/api/restyle/{project_id}")
+def restyle_detail(project_id: str) -> dict[str, Any]:
+    record = restyle_store.detail(project_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="restyle not found")
+    return record
+
+
+@app.post("/api/restyle/{project_id}/analyze")
+def restyle_analyze(project_id: str) -> dict[str, Any]:
+    try:
+        job = restyle_store.start_analysis(project_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    return {"job": job}
+
+
+@app.patch("/api/restyle/{project_id}/plan")
+def restyle_save_plan(project_id: str, payload: RestylePlanPayload) -> dict[str, Any]:
+    try:
+        plan = restyle_store.save_plan(project_id, payload.patch, payload.revision)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    except ValueError as exc:
+        if str(exc) == "revision_conflict":
+            current = restyle_store.detail(project_id) or {}
+            return JSONResponse(
+                status_code=409,
+                content={"detail": "revision conflict", "plan": current.get("plan")},
+            )
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"plan": plan}
+
+
+@app.delete("/api/restyle/{project_id}")
+def restyle_delete(project_id: str) -> dict[str, Any]:
+    try:
+        token = restyle_store.delete(project_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="restyle not found") from exc
+    return {"trash_id": token}
 
 
 @app.get("/api/health")

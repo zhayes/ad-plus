@@ -12,7 +12,7 @@ interface Props extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors " +
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-colors " +
   "disabled:cursor-default disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 " +
   "focus-visible:outline-accent";
 

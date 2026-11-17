@@ -1,11 +1,12 @@
 import { For, Show, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
 import Badge from "../ui/Badge";
+import Icon from "../ui/Icon";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 import AssetDrawer from "./AssetDrawer";
 import { endpoints, uploadAsset } from "../../lib/api";
-import { fmtBytes } from "../../lib/format";
+import { fmtBytes, fmtTime } from "../../lib/format";
 import { kindLabel, sourceLabel } from "../../lib/assets";
 import { mediaUrl } from "../../lib/projects";
 import { projects, refreshProjects } from "../../stores/projects";
@@ -41,6 +42,14 @@ export default function AssetsPanel(props: Props) {
   const [selectedId, setSelectedId] = createSignal<string | null>(null);
   const [busy, setBusy] = createSignal(false);
   const [dragging, setDragging] = createSignal(false);
+  const [view, setView] = createSignal<"cards" | "table">(
+    (localStorage.getItem("adplus.assets.view") as "cards" | "table") || "cards",
+  );
+
+  const changeView = (next: "cards" | "table") => {
+    setView(next);
+    localStorage.setItem("adplus.assets.view", next);
+  };
 
   let fileInput: HTMLInputElement | undefined;
   let debounce: ReturnType<typeof setTimeout> | undefined;
@@ -154,7 +163,27 @@ export default function AssetsPanel(props: Props) {
         <Show when={busy()}>
           <span class="text-[10px] text-faint">上传中…</span>
         </Show>
-        <div class="ml-auto text-[10.5px] text-faint">{assets().length} 个素材</div>
+        <div class="ml-auto flex items-center gap-2">
+          <span class="text-[10.5px] text-faint">{assets().length} 个素材</span>
+          <div class="flex items-center rounded-md border border-line-soft bg-surface p-0.5">
+            <button
+              type="button"
+              class={`grid h-6 w-6 place-items-center rounded ${view() === "cards" ? "bg-surface-2 text-text" : "text-faint hover:text-text"}`}
+              title="卡片视图"
+              onClick={() => changeView("cards")}
+            >
+              <Icon name="grid" size={13} />
+            </button>
+            <button
+              type="button"
+              class={`grid h-6 w-6 place-items-center rounded ${view() === "table" ? "bg-surface-2 text-text" : "text-faint hover:text-text"}`}
+              title="表格视图"
+              onClick={() => changeView("table")}
+            >
+              <Icon name="list" size={13} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <Show when={error()}>
@@ -187,6 +216,10 @@ export default function AssetsPanel(props: Props) {
             </div>
           }
         >
+          <Show
+            when={view() === "cards"}
+            fallback={<AssetTable assets={assets()} thumb={thumb} onOpen={setSelectedId} />}
+          >
           <div class="grid grid-cols-2 gap-3 pb-6 md:grid-cols-3 xl:grid-cols-4">
             <For each={assets()}>
               {(asset) => (
@@ -227,6 +260,7 @@ export default function AssetsPanel(props: Props) {
               )}
             </For>
           </div>
+          </Show>
         </Show>
       </Show>
 
@@ -244,6 +278,69 @@ export default function AssetsPanel(props: Props) {
           void refreshProjects();
         }}
       />
+    </div>
+  );
+}
+
+function AssetTable(props: {
+  assets: Asset[];
+  thumb: (asset: Asset) => string | null;
+  onOpen: (id: string) => void;
+}) {
+  return (
+    <div class="overflow-hidden rounded-xl border border-line-soft bg-surface">
+      <table class="w-full border-collapse text-left">
+        <thead class="border-b border-line-soft bg-surface-2/40">
+          <tr class="text-[10px] text-faint">
+            <th class="px-3 py-2 font-normal">素材</th>
+            <th class="px-3 py-2 font-normal">类型</th>
+            <th class="hidden px-3 py-2 font-normal sm:table-cell">来源</th>
+            <th class="hidden px-3 py-2 font-normal md:table-cell">项目</th>
+            <th class="px-3 py-2 font-normal">大小</th>
+            <th class="hidden px-3 py-2 font-normal lg:table-cell">更新</th>
+            <th class="px-3 py-2 text-right font-normal">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <For each={props.assets}>
+            {(asset) => (
+              <tr
+                class="group cursor-pointer border-b border-line-soft/70 last:border-0 hover:bg-surface-2/40"
+                onClick={() => props.onOpen(asset.id)}
+              >
+                <td class="max-w-[320px] px-3 py-2">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="h-9 w-12 shrink-0 overflow-hidden rounded-md border border-line-soft bg-[#0b0e15]">
+                      <Show
+                        when={props.thumb(asset)}
+                        fallback={<span class="grid h-full w-full place-items-center text-[14px] text-white/20">{asset.kind === "audio" ? "♫" : "▣"}</span>}
+                      >
+                        <img src={props.thumb(asset)!} alt="" class="h-full w-full object-cover" loading="lazy" />
+                      </Show>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block truncate text-[12px] text-text">{asset.name}</span>
+                      <span class="mt-0.5 block truncate font-mono text-[9.5px] text-faint">{asset.path}</span>
+                    </span>
+                  </div>
+                </td>
+                <td class="px-3 py-2">
+                  <Badge tone={asset.kind === "video" ? "accent" : "neutral"}>{kindLabel(asset.kind)}</Badge>
+                </td>
+                <td class="hidden px-3 py-2 text-[10.5px] text-dim sm:table-cell">{sourceLabel(asset.source)}</td>
+                <td class="hidden max-w-[140px] truncate px-3 py-2 text-[10.5px] text-dim md:table-cell">{asset.project_id || "—"}</td>
+                <td class="px-3 py-2 font-mono text-[10px] text-faint">{fmtBytes(asset.bytes)}</td>
+                <td class="hidden px-3 py-2 text-[10.5px] text-faint lg:table-cell">{fmtTime(asset.mtime) || "—"}</td>
+                <td class="px-3 py-2 text-right">
+                  <Button size="sm" variant="ghost" onClick={(event) => { event.stopPropagation(); props.onOpen(asset.id); }}>
+                    详情
+                  </Button>
+                </td>
+              </tr>
+            )}
+          </For>
+        </tbody>
+      </table>
     </div>
   );
 }

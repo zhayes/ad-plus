@@ -1,3 +1,7 @@
 # Ad+ specific dependencies (upstream requirements live in vendor/openmontage)
 pywebview>=6.0          # fallback native window when the Tauri shell is unavailable
 mcp>=1.0                # Model Context Protocol server used by adplus.mcp
+
+# 「复制爆款」解析层（P0）。可选：装了就把繁体转简体，不装也能跑。
+faster-whisper>=1.1      # 本地中文转写（模型首次运行自动下载）
+opencc-python-reimplemented>=0.1  # whisper 偶发繁体输出 -> 简体

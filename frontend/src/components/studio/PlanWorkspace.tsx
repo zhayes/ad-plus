@@ -207,6 +207,16 @@ export default function PlanWorkspace(props: Props) {
   const confirm = async () => {
     const current = quote();
     if (!current) return;
+    if (current.stale) {
+      setError("配置已变更，请重新生成报价后再确认");
+      setConfirmOpen(false);
+      return;
+    }
+    if (current.over_budget) {
+      setError("报价超过预算上限，请调整预算或生成方式");
+      setConfirmOpen(false);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -251,7 +261,7 @@ export default function PlanWorkspace(props: Props) {
 
   return (
     <div class="h-full overflow-auto px-4 py-4 sm:px-5">
-      <div class="mx-auto w-full max-w-[1180px]">
+      <div class="mx-auto w-full max-w-[1440px]">
         <div class="mb-4 flex flex-wrap items-end gap-2">
           <div>
             <div class="flex items-center gap-2">
@@ -272,6 +282,20 @@ export default function PlanWorkspace(props: Props) {
             方案确认后再进入脚本
           </div>
         </div>
+
+        <Show when={quote()?.stale}>
+          <div class="mb-3 flex items-center gap-2 rounded-lg border border-warn/30 bg-warn/5 px-3 py-2 text-[11px] text-warn">
+            <span class="min-w-0 flex-1">制作设置已变更，当前报价已过期，请重新生成方案与报价。</span>
+            <Button size="sm" variant="secondary" onClick={() => void regenerate()}>重新报价</Button>
+          </div>
+        </Show>
+
+        <Show when={quote()?.over_budget}>
+          <div class="mb-3 flex items-center gap-2 rounded-lg border border-bad/30 bg-bad/5 px-3 py-2 text-[11px] text-bad">
+            <span class="min-w-0 flex-1">当前报价超过预算上限，不能确认。</span>
+            <span class="font-mono">${quote()?.total_usd?.toFixed(2)} / ${quote()?.budget_usd?.toFixed(2)}</span>
+          </div>
+        </Show>
 
         <Show when={error()}>
           <div class="mb-3 flex items-center gap-2 rounded-lg border border-bad/30 bg-bad/5 px-3 py-2 text-[11px] text-bad">
@@ -295,11 +319,11 @@ export default function PlanWorkspace(props: Props) {
           <Show
             when={hasOutput() || generating()}
             fallback={
-              <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
                 <div class="rounded-xl border border-line-soft bg-surface p-5">
                   <div class="text-[13px] font-semibold text-text">先做一份方案，再决定要不要开工</div>
                   <p class="mt-1 max-w-[560px] text-[11.5px] leading-6 text-dim">
-                    方案会给出概念、粗分镜、关键帧方向、交付规格和报价。确认报价后才进入分镜制作，不会直接渲染整片。
+                    方案会给出概念、粗分镜、交付规格和报价。确认报价后才进入分镜制作，不会直接渲染整片。
                   </p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-3">
                     <For each={["概念与 hook", "5 镜粗分镜", "报价与 ETA"]}>
@@ -315,8 +339,7 @@ export default function PlanWorkspace(props: Props) {
                   <div class="text-[10px] tracking-wide text-faint">开始前</div>
                   <div class="mt-2 space-y-1.5 text-[10.5px] text-faint">
                     <div>· 报价未确认前不产生付费生成</div>
-                    <div>· 关键帧方向在分镜阶段细化</div>
-                    <div>· 可先离开，生成完成后回来</div>
+                                        <div>· 可先离开，生成完成后回来</div>
                   </div>
                 </div>
               </div>
@@ -341,11 +364,11 @@ export default function PlanWorkspace(props: Props) {
             <Show when={quote()?.eta_seconds}>，预计 {fmtEta(quote()?.eta_seconds)}</Show>。
           </p>
           <div class="rounded-lg border border-line-soft bg-surface-2/40 p-3 text-[11px] leading-5 text-faint">
-            方案、关键帧和报价会锁定为当前版本；修改需要重新生成。
+            方案和报价会锁定为当前版本；修改需要重新生成。
           </div>
           <div class="flex justify-end gap-2">
             <Button size="sm" onClick={() => setConfirmOpen(false)}>再看看</Button>
-            <Button size="sm" variant="primary" loading={busy()} onClick={() => void confirm()}>
+            <Button size="sm" variant="primary" loading={busy()} disabled={Boolean(quote()?.stale || quote()?.over_budget)} onClick={() => void confirm()}>
               确认方案
             </Button>
           </div>
@@ -442,7 +465,7 @@ export default function PlanWorkspace(props: Props) {
   function ProposalContent() {
     const value = () => proposal()!;
     return (
-      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div class="min-w-0 space-y-4 pb-4">
           <Show when={approved()}>
             <div class="flex flex-wrap items-center gap-3 rounded-xl border border-ok/30 bg-ok/5 px-4 py-3">
@@ -471,7 +494,7 @@ export default function PlanWorkspace(props: Props) {
             <Show when={value().concept.hook}>
               <div class="mt-1 text-[12.5px] leading-6 text-accent">{value().concept.hook}</div>
             </Show>
-            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <div class="mt-3 grid gap-3 2xl:grid-cols-2">
               <div>
                 <div class="text-[9.5px] uppercase tracking-wide text-faint">为什么会成立</div>
                 <p class="mt-1 text-[11.5px] leading-6 text-dim">{value().concept.insight || "—"}</p>
@@ -533,42 +556,6 @@ export default function PlanWorkspace(props: Props) {
           <section class="rounded-xl border border-line-soft bg-surface p-4 sm:p-5">
             <div class="flex items-center gap-2">
               <span class="font-mono text-[9.5px] text-accent">04</span>
-              <span class="text-[10px] tracking-wide text-faint">关键帧方向</span>
-              <span class="ml-auto text-[9.5px] text-faint">分镜阶段细化</span>
-            </div>
-            <Show
-              when={value().keyframes.length > 0}
-              fallback={
-                <div class="mt-3 grid grid-cols-3 gap-2">
-                  <For each={value().shots.slice(0, 3)}>
-                    {(shot, index) => (
-                      <div class="overflow-hidden rounded-lg border border-line-soft bg-[#0b0e15]" style={{ "aspect-ratio": "9 / 16" }}>
-                        <div class="flex h-full flex-col items-center justify-center gap-2 p-2 text-center" style={{ background: index() === 0 ? "linear-gradient(160deg,#3a1b34,#121620)" : index() === 1 ? "linear-gradient(160deg,#1b2b3a,#121620)" : "linear-gradient(160deg,#332816,#121620)" }}>
-                          <span class="font-mono text-[9px] text-white/35">0{shot.index}</span>
-                          <span class="text-[10px] leading-4 text-white/55">{shot.role}</span>
-                          <span class="text-[9px] text-white/30">关键帧待生成</span>
-                        </div>
-                      </div>
-                    )}
-                  </For>
-                </div>
-              }
-            >
-              <div class="mt-3 grid grid-cols-3 gap-2">
-                <For each={value().keyframes.slice(0, 3)}>
-                  {(frame) => (
-                    <div class="overflow-hidden rounded-lg border border-line-soft bg-[#0b0e15]" style={{ "aspect-ratio": "9 / 16" }}>
-                      <img src={mediaUrl(frame.path) ?? undefined} alt="" class="h-full w-full object-contain" />
-                    </div>
-                  )}
-                </For>
-              </div>
-            </Show>
-          </section>
-
-          <section class="rounded-xl border border-line-soft bg-surface p-4 sm:p-5">
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-[9.5px] text-accent">05</span>
               <span class="text-[10px] tracking-wide text-faint">交付什么</span>
             </div>
             <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -598,7 +585,7 @@ export default function PlanWorkspace(props: Props) {
           </Show>
         </div>
 
-        <aside class="space-y-3 lg:sticky lg:top-0 lg:self-start">
+        <aside class="space-y-3 xl:sticky xl:top-0 xl:self-start">
           <div class="rounded-xl border border-line-soft bg-surface p-4">
             <div class="flex items-center gap-2">
               <span class="text-[10px] tracking-wide text-faint">报价</span>
@@ -608,6 +595,12 @@ export default function PlanWorkspace(props: Props) {
             <div class="mt-0.5 text-[10.5px] text-faint">
               ETA {fmtEta(quote()?.eta_seconds)} · {quote()?.currency ?? "USD"}
             </div>
+            <Show when={quote()?.audio_budget_usd != null}>
+              <div class="mt-1 flex gap-3 text-[9.5px] text-faint">
+                <span>配音预算 {fmtUsd(quote()!.audio_budget_usd)}</span>
+                <span>画面预算 {fmtUsd(quote()!.video_budget_usd)}</span>
+              </div>
+            </Show>
             <div class="mt-3 space-y-1 border-t border-line-soft pt-2">
               <For each={quote()?.line_items ?? []}>
                 {(line) => (

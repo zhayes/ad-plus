@@ -5,6 +5,7 @@ import ModuleDock from "../components/layout/ModuleDock";
 import Rail from "../components/layout/Rail";
 import Transcript from "../components/chat/Transcript";
 import Composer from "../components/chat/Composer";
+import ScenePanel from "../components/chat/ScenePanel";
 import AskDock from "../components/chat/AskDock";
 import JobsPanel from "../components/panel/JobsPanel";
 import ArtifactsPanel from "../components/panel/ArtifactsPanel";
@@ -46,6 +47,9 @@ export default function Workspace() {
   const params = useParams();
   const navigate = useNavigate();
 
+  const initialTab = (): "chat" | "scene" =>
+    new URLSearchParams(window.location.search).get("tab") === "scene" ? "scene" : "chat";
+  const [tab, setTab] = createSignal<"chat" | "scene">(initialTab());
   const [railOpen, setRailOpen] = createSignal(false);
   const [panelOpen, setPanelOpen] = createSignal(false);
   const [artifacts, setArtifacts] = createSignal<Artifact[]>([]);
@@ -242,18 +246,38 @@ export default function Workspace() {
         </div>
       }
     >
-      <Transcript />
-      <div class="shrink-0 px-4 pb-3">
+      <div class="flex shrink-0 items-center gap-1 border-b border-line px-4 py-1.5">
+        <button
+          class={`rounded-md px-2.5 py-1 text-[11.5px] ${tab() === "chat" ? "bg-surface-2 text-text" : "text-faint hover:text-dim"}`}
+          onClick={() => setTab("chat")}
+        >
+          通用创作
+        </button>
+        <button
+          class={`rounded-md px-2.5 py-1 text-[11.5px] ${tab() === "scene" ? "bg-surface-2 text-text" : "text-faint hover:text-dim"}`}
+          onClick={() => setTab("scene")}
+        >
+          场景应用
+        </button>
+      </div>
+      <Show when={tab() === "scene"} fallback={
+        <>
+          <Transcript />
+          <div class="shrink-0 px-4 pb-3">
         <AskDock />
         <Composer running={running()} onSend={send} onStop={stopRun} />
-        <Show when={usage()}>
-          {(totals) => (
-            <div class="mx-auto w-full max-w-[760px] text-right font-mono text-[10.5px] text-faint">
-              ↓{totals().input} ↑{totals().output} · {fmtUsd(totals().cost)}
-            </div>
-          )}
-        </Show>
-      </div>
+            <Show when={usage()}>
+              {(totals) => (
+                <div class="mx-auto w-full max-w-[760px] text-right font-mono text-[10.5px] text-faint">
+                  ↓{totals().input} ↑{totals().output} · {fmtUsd(totals().cost)}
+                </div>
+              )}
+            </Show>
+          </div>
+        </>
+      }>
+        <ScenePanel />
+      </Show>
     </AppShell>
       </div>
       <ModuleDock active="create" />

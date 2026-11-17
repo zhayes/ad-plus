@@ -17,7 +17,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from app import env_utils, secrets_store
+from app import env_utils, secrets_store, skills_store
 
 
 def pi_executable() -> str | None:
@@ -42,6 +42,7 @@ class PiBridge:
         args = [exe, "--mode", "rpc", "--approve"]
         if hints.is_file():
             args += ["--append-system-prompt", str(hints)]
+        args += skills_store.pi_skill_args()
         if session_dir:
             Path(session_dir).mkdir(parents=True, exist_ok=True)
             args += ["--session-dir", str(session_dir)]

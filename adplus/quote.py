@@ -156,12 +156,63 @@ def plan_from_brief(
     aspect: str = "9:16",
     with_voice: bool = False,
     fps: int = 30,
+    settings: dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any], list[str]]:
     """Derive a shot plan from a one-line brief so turn one can still quote.
 
     Providers are chosen from what is actually configured; with no keys the
     plan is local-only and priced at the render time alone.
     """
+    profile_tool = {
+        "seedance-2.0": "seedance_ark",
+        "seedance-2.5": "seedance_ark",
+        "minimax-hailuo-2.3-fast": "minimax_video",
+        "wav2lip": "lip_sync",
+        "kling-avatar": "kling_avatar",
+        "heygen-avatar-v": "heygen_avatar",
+    }
+    if isinstance(settings, dict):
+        output = settings.get("output") if isinstance(settings.get("output"), dict) else {}
+        generation = settings.get("generation") if isinstance(settings.get("generation"), dict) else {}
+        duration_seconds = output.get("duration_s") or duration_seconds
+        aspect = output.get("aspect") or aspect
+        fps = int(output.get("fps") or fps)
+        resolution = str(output.get("resolution") or "480p")
+        route_id = str(settings.get("route_id") or "")
+        profile_id = generation.get("talking_head_profile") if route_id == "avatar_spokesperson" else generation.get("broll_profile")
+        profile_id = profile_id or generation.get("broll_profile") or generation.get("talking_head_profile")
+        profile = str(profile_id or "")
+        duration = max(3.0, min(120.0, float(duration_seconds or 15)))
+        scenes = max(3, min(8, round(duration / 3.5) + 1))
+        per_scene = duration / scenes
+        notes = [
+            f"{scenes} 个镜头 · 每镜约 {per_scene:.1f}s",
+            f"{aspect} · {fps}fps · {resolution}",
+            f"生成配置：{profile or '未指定'} · {generation.get('audio_mode') or 'silent'}",
+        ]
+        shots: list[dict[str, Any]] = []
+        tool = profile_tool.get(profile)
+        if tool:
+            params: dict[str, Any] = {"duration": max(4, min(15, round(per_scene)))}
+            if tool == "seedance_ark":
+                params.update({
+                    "model_variant": "2.5" if profile == "seedance-2.5" else "standard",
+                    "operation": "image_to_video",
+                    "resolution": resolution,
+                })
+            elif tool == "minimax_video":
+                params.update({"model": "MiniMax-Hailuo-2.3-Fast", "resolution": "768P" if resolution in {"480p", "720p"} else "1080P"})
+            shots.append({
+                "tool": tool,
+                "label": f"{scenes} 个镜头 · {profile}",
+                "params": params,
+                "count": scenes,
+            })
+        elif profile:
+            notes.append(f"当前配置的模型 {profile} 没有可报价的 tool 映射")
+        render = {"frames": int(duration * max(24, min(60, fps))), "fps": fps}
+        return shots, render, notes
+
     duration = max(3.0, min(120.0, float(duration_seconds or 15)))
     scenes = max(3, min(8, round(duration / 3.5) + 1))
     per_scene = duration / scenes

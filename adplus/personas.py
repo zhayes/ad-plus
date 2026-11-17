@@ -94,7 +94,25 @@ def _normalise(data: dict[str, Any]) -> dict[str, Any]:
     persona.setdefault("wardrobe", "")
     persona.setdefault("scene", "")
     voice = persona.get("voice") if isinstance(persona.get("voice"), dict) else {}
-    persona["voice"] = voice
+    persona["voice"] = {
+        "provider": str(voice.get("provider") or ""),
+        "voice_id": str(voice.get("voice_id") or ""),
+        "language": str(voice.get("language") or "zh-CN"),
+        "speed": float(voice.get("speed") or 1.0),
+        "sample_path": str(voice.get("sample_path") or ""),
+    }
+    base_videos = []
+    for item in persona.get("base_videos") or []:
+        if isinstance(item, dict) and item.get("path"):
+            base_videos.append({
+                "id": str(item.get("id") or uuid.uuid4().hex[:8]),
+                "path": str(item["path"]),
+                "framing": str(item.get("framing") or "half_body"),
+                "duration_s": float(item.get("duration_s") or 0),
+                "resolution": str(item.get("resolution") or ""),
+                "silent": bool(item.get("silent", True)),
+            })
+    persona["base_videos"] = base_videos
     rights = persona.get("rights") if isinstance(persona.get("rights"), dict) else {}
     persona["rights"] = {
         "ai_allowed": bool(rights.get("ai_allowed")),

@@ -35,6 +35,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from adplus import production_settings
 from adplus.paths import BRANDS, PROJECTS
 
 PROJECT_STATUSES = (
@@ -43,6 +44,7 @@ PROJECT_STATUSES = (
 VERSION_STATUSES = ("draft", "producing", "review", "approved", "superseded")
 SHOT_ROLES = ("hook", "build", "proof", "cta")
 SHOT_STATUSES = ("planned", "generating", "ready", "approved", "needs_rework")
+AUDIO_STATUSES = ("empty", "generating", "ready", "failed", "stale", "not_required")
 PRODUCTION_METHODS = (
     "source_video", "image_to_video", "reference_to_video", "avatar",
     "lip_sync", "motion_graphic", "still_plate", "product_composite",
@@ -148,6 +150,11 @@ def _normalise_project(data: dict[str, Any], project_id: str) -> dict[str, Any]:
     project.setdefault("format_id", None)
     project.setdefault("product_id", None)
     project.setdefault("brief", {})
+    try:
+        project["production_settings"] = production_settings.normalize_settings(project)
+    except ValueError:
+        # Stored values this build rejects must not break listing/opening the whole project.
+        project["production_settings"] = production_settings.default_settings(project)
     project.setdefault("current_version_id", None)
     project.setdefault("cover", None)
     project.setdefault("created_at", _now())
@@ -156,7 +163,11 @@ def _normalise_project(data: dict[str, Any], project_id: str) -> dict[str, Any]:
 
 
 def load_project(project_id: str) -> dict[str, Any] | None:
-    path = _project_dir(project_id) / "project.json"
+    try:
+        path = _project_dir(project_id) / "project.json"
+    except ValueError:
+        # Stray entries under projects/ (.trash, "my draft") are not projects.
+        return None
     data = _read_json(path)
     if data is None:
         return None
@@ -207,12 +218,14 @@ def create_project(
         "product_id": fields.get("product_id"),
         "format_id": fields.get("format_id"),
         "route": copy.deepcopy(fields.get("route")),
+        "production_settings": copy.deepcopy(fields.get("production_settings") or {}),
         "brief": copy.deepcopy(fields.get("brief") or {}),
         "current_version_id": None,
         "cover": None,
         "created_at": _now(),
         "updated_at": _now(),
     }
+    project["production_settings"] = production_settings.normalize_settings(project)
     return save_project(project)
 
 
@@ -223,10 +236,22 @@ def update_project(project_id: str, fields: dict[str, Any]) -> dict[str, Any]:
     allowed = {
         "title", "status", "platform", "aspect", "duration_s", "quality_tier",
         "brand_id", "persona_id", "product_id", "format_id", "brief", "current_version_id", "pipeline_type", "cover", "route",
+        "production_settings",
     }
     unknown = set(fields) - allowed
     if unknown:
         raise ValueError(f"unknown project fields: {sorted(unknown)}")
+    if "production_settings" in fields:
+        fields = dict(fields)
+        fields["production_settings"] = production_settings.merge_settings(
+            project.get("production_settings") or {},
+            fields["production_settings"] if isinstance(fields["production_settings"], dict) else {},
+        )
+        output = fields["production_settings"].get("output") or {}
+        fields.setdefault("platform", output.get("platform") or project.get("platform"))
+        fields.setdefault("aspect", output.get("aspect") or project.get("aspect"))
+        fields.setdefault("duration_s", output.get("duration_s") or project.get("duration_s"))
+        fields.setdefault("quality_tier", (fields["production_settings"].get("visual") or {}).get("quality_tier") or project.get("quality_tier"))
     if "title" in fields and not str(fields["title"]).strip():
         raise ValueError("title required")
     if "status" in fields and fields["status"] not in PROJECT_STATUSES:
@@ -301,14 +326,17 @@ def project_summary(project: dict[str, Any]) -> dict[str, Any]:
         updated = (PROJECTS / project_id / "project.json").stat().st_mtime
     except OSError:
         updated = 0.0
-    try:
-        from adplus import production
-        prod = production.production_payload(project_id)
-        stage_label = next((item["label"] for item in (prod or {}).get("stages", []) if item["id"] == (prod or {}).get("current_stage")), "")
-        next_action = (prod or {}).get("next_action") or ""
-        route_label = ((prod or {}).get("route") or {}).get("label") or ""
-    except Exception:
-        stage_label, next_action, route_label = "", "", ""
+    if project.get("format_id") == "reference_restyle":
+        stage_label, next_action, route_label = "改写", "", "改写"
+    else:
+        try:
+            from adplus import production
+            prod = production.production_payload(project_id)
+            stage_label = next((item["label"] for item in (prod or {}).get("stages", []) if item["id"] == (prod or {}).get("current_stage")), "")
+            next_action = (prod or {}).get("next_action") or ""
+            route_label = ((prod or {}).get("route") or {}).get("label") or ""
+        except Exception:
+            stage_label, next_action, route_label = "", "", ""
     return {
         "id": project_id,
         "title": project.get("title") or project_id,
@@ -326,6 +354,7 @@ def project_summary(project: dict[str, Any]) -> dict[str, Any]:
         "pending_count": pending_count(project_id),
         "cost_usd": round(cost, 4),
         "brand_id": project.get("brand_id"),
+        "format_id": project.get("format_id"),
         "route_label": route_label,
         "stage_label": stage_label,
         "next_action": next_action,
@@ -423,9 +452,15 @@ def normalise_shot(raw: dict[str, Any]) -> dict[str, Any]:
     shot = copy.deepcopy(raw)
     method = str(shot.get("production_method") or "source_video")
     shot["production_method"] = method if method in PRODUCTION_METHODS else "source_video"
-    for key in ("shot_language", "asset_refs", "generation_spec", "timeline"):
+    for key in ("shot_language", "asset_refs", "generation_spec", "timeline", "audio"):
         value = shot.get(key)
         shot[key] = value if isinstance(value, dict) else {}
+    audio = shot["audio"]
+    if not audio:
+        audio.update({"status": "empty", "path": None, "duration_s": None})
+    audio["status"] = str(audio.get("status") or "empty")
+    if audio["status"] not in AUDIO_STATUSES:
+        audio["status"] = "empty"
     if shot.get("persona_id") is not None:
         shot["persona_id"] = str(shot.get("persona_id"))
     if shot.get("product_id") is not None:
@@ -649,6 +684,7 @@ def add_shot(
         "shot_language": copy.deepcopy(fields.get("shot_language") or {}),
         "asset_refs": copy.deepcopy(fields.get("asset_refs") or {}),
         "generation_spec": copy.deepcopy(fields.get("generation_spec") or {}),
+        "audio": copy.deepcopy(fields.get("audio") or {}),
         "timeline": copy.deepcopy(fields.get("timeline") or {}),
         "persona_id": fields.get("persona_id"),
         "product_id": fields.get("product_id"),
@@ -683,7 +719,7 @@ def update_shot(
         "role", "description", "framing", "movement", "transition_in", "transition_out",
         "on_screen_text", "narration", "status", "locked", "preview", "duration_s",
         "take_count", "cost_usd", "production_method", "shot_language",
-        "asset_refs", "generation_spec", "timeline", "persona_id", "product_id",
+        "asset_refs", "generation_spec", "timeline", "persona_id", "product_id", "audio",
     }
     unknown = set(fields) - allowed
     if unknown:

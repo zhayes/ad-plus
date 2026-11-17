@@ -97,6 +97,12 @@ def plan(
     video_path = video_path or spec.get("video_path") or refs.get("source_video")
     audio = _workspace_path(str(audio_path)) if audio_path else None
     video = _workspace_path(str(video_path)) if video_path else None
+    if video is None and persona:
+        for item in persona.get("base_videos") or []:
+            candidate = _workspace_path(str(item.get("path") or "")) if isinstance(item, dict) else None
+            if candidate and candidate.is_file():
+                video = candidate
+                break
     persona_image = _workspace_path(str(persona.get("source_path"))) if persona and persona.get("source_path") else None
     product_image = _workspace_path(str(product.get("hero_path"))) if product and product.get("hero_path") else None
 
@@ -108,19 +114,10 @@ def plan(
 
     if persona is None:
         blockers.append("镜头没有绑定数字人/persona")
-    else:
-        rights = persona.get("rights") or {}
-        if not rights.get("ai_allowed"):
-            blockers.append("persona 未授权 AI 生成")
-        if not rights.get("consent"):
-            blockers.append("persona 未确认肖像授权")
-        if not persona_image or not persona_image.is_file():
-            blockers.append("persona 没有人像源文件")
+    elif not persona_image or not persona_image.is_file():
+        blockers.append("persona 没有人像源文件")
 
     if product is not None:
-        rights = product.get("rights") or {}
-        if not rights.get("ai_reference_allowed"):
-            blockers.append("商品未授权 AI 参考")
         if product.get("locked") and not product_image:
             blockers.append("锁定商品缺少真实主图")
         if product_image and not product_image.is_file():
@@ -133,7 +130,7 @@ def plan(
             blockers.append("缺少数字人人像")
     elif profile_id == "wav2lip":
         if not video or not video.is_file():
-            blockers.append("Wav2Lip 需要源视频")
+            blockers.append("Wav2Lip 需要基础表演视频；静态图片只会动嘴，效果差")
         if not audio or not audio.is_file():
             blockers.append("Wav2Lip 需要音频")
     elif profile_id == "heygen-avatar-v":
@@ -162,6 +159,7 @@ def plan(
         "persona": personas.persona_snapshot(persona_id),
         "product": products.product_snapshot(product_id),
         "input": {
+            "persona_voice": (persona or {}).get("voice") if persona else None,
             "persona_image": _rel(persona_image) if persona_image else None,
             "product_image": _rel(product_image) if product_image else None,
             "audio_path": _rel(audio) if audio else None,
@@ -208,8 +206,8 @@ def execute(take: dict[str, Any]) -> dict[str, Any]:
 
     if profile_id == "kling-avatar":
         result = tool.execute({
-            "image_path": input_["persona_image"],
-            "audio_path": input_["audio_path"],
+            "image_path": str(_workspace_path(input_.get("persona_image")) or input_.get("persona_image") or ""),
+            "audio_path": str(_workspace_path(input_.get("audio_path")) or input_.get("audio_path") or ""),
             "mode": "std",
             "prompt": prompt,
             "output_path": str(output),
@@ -217,8 +215,8 @@ def execute(take: dict[str, Any]) -> dict[str, Any]:
         })
     elif profile_id == "wav2lip":
         result = tool.execute({
-            "video_path": input_["video_path"],
-            "audio_path": input_["audio_path"],
+            "video_path": str(_workspace_path(input_.get("video_path")) or input_.get("video_path") or ""),
+            "audio_path": str(_workspace_path(input_.get("audio_path")) or input_.get("audio_path") or ""),
             "output_path": str(output),
             "model": "wav2lip_gan",
         })

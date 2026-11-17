@@ -300,7 +300,7 @@ export default function Studio() {
 
   return (
     <AppShellV2
-      module="studio"
+      module="projects"
       context={
         <div class="flex min-w-0 items-center gap-2">
           <button type="button" class="grid h-7 w-7 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-text" title="返回项目" onClick={() => navigate("/projects")}>
@@ -456,7 +456,33 @@ export default function Studio() {
                           <Show
                             when={current()?.render?.path}
                             fallback={
-                              <>
+                              <Show
+                                when={production()?.route.id === "local_motion"}
+                                fallback={
+                                  <Show
+                                    when={(production()?.shots ?? []).every((shot) => Boolean(shot.preview))}
+                                    fallback={
+                                      <>
+                                        <span class="text-[10px] text-faint">
+                                          还有镜头没有素材，先在「素材」完成 {production()?.shots.length ?? 0} 个镜头
+                                        </span>
+                                        <Button size="sm" variant="secondary" onClick={() => advance("assets")}>
+                                          回到素材
+                                        </Button>
+                                      </>
+                                    }
+                                  >
+                                    <Show when={composeJob()}>
+                                      <span class="font-mono text-[9.5px] text-faint">
+                                        {composeJob()!.status} · {Math.round(Number(composeJob()!.progress || 0) * 100)}%
+                                      </span>
+                                    </Show>
+                                    <Button size="sm" variant="primary" loading={actionBusy() || !!composeJob()} onClick={() => void startCompose()}>
+                                      {composeJob() ? "合成中…" : "合成数字人成片"}
+                                    </Button>
+                                  </Show>
+                                }
+                              >
                                 <Show when={composeJob()}>
                                   <span class="font-mono text-[9.5px] text-faint">
                                     {composeJob()!.status} · {Math.round(Number(composeJob()!.progress || 0) * 100)}%
@@ -465,7 +491,7 @@ export default function Studio() {
                                 <Button size="sm" variant="primary" loading={actionBusy() || !!composeJob()} onClick={() => void startCompose()}>
                                   {composeJob() ? "渲染中…" : "生成本地动效成片"}
                                 </Button>
-                              </>
+                              </Show>
                             }
                           >
                             <Button
@@ -489,7 +515,7 @@ export default function Studio() {
                   </Show>
                 </main>
 
-                <div class="hidden xl:block">
+                <div class="hidden w-[280px] shrink-0 xl:block">
                   <StageInspector production={production()!} stage={stageRow()!} />
                 </div>
               </div>

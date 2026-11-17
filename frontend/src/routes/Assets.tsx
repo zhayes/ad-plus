@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "@solidjs/router";
 import AppShellV2 from "../components/layout/AppShellV2";
 import AssetsPanel from "../components/assets/AssetsPanel";
 import BrandsPanel from "../components/assets/BrandsPanel";
-import PersonasPanel from "../components/assets/PersonasPanel";
+import PersonasTable from "../components/assets/PersonasTable";
 import ProductsPanel from "../components/assets/ProductsPanel";
 import Button from "../components/ui/Button";
 
@@ -23,7 +23,6 @@ export default function Assets() {
   const [tab, setTab] = createSignal(initialTab);
   const [assetOpen, setAssetOpen] = createSignal<{ fn: () => void } | null>(null);
   const [brandOpen, setBrandOpen] = createSignal<{ fn: () => void } | null>(null);
-  const [personaOpen, setPersonaOpen] = createSignal<{ fn: () => void } | null>(null);
   const [productOpen, setProductOpen] = createSignal<{ fn: () => void } | null>(null);
 
   const AssetsPrimary = () => (
@@ -37,7 +36,7 @@ export default function Assets() {
     </Button>
   );
   const PersonasPrimary = () => (
-    <Button size="sm" variant="primary" onClick={() => personaOpen()?.fn()}>
+    <Button size="sm" variant="primary" onClick={() => navigate("/personas/new")}>
       ＋ 新建数字人
     </Button>
   );
@@ -116,7 +115,7 @@ export default function Assets() {
         <ProductsPanel onPrimaryReady={(fn) => setProductOpen({ fn })} />
       </Show>
       <Show when={tab() === "personas"}>
-        <PersonasPanel onPrimaryReady={(fn) => setPersonaOpen({ fn })} />
+        <PersonasTable />
       </Show>
       <Show when={tab() === "brands"}>
         <BrandsPanel onPrimaryReady={(fn) => setBrandOpen({ fn })} />

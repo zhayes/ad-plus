@@ -23,9 +23,15 @@ import type {
   ProjectRecord,
   ProjectSummary,
   Quote,
+  RecreateDetail,
+  RecreateSummary,
+  RestyleDetail,
+  RestylePlan,
+  RestyleSummary,
   ReuseAssetResult,
   ReviewPayload,
   Shot,
+  Skill,
   Version,
   SessionSummary,
 } from "./types";
@@ -37,7 +43,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${text.slice(0, 200)}`);
+    let detail = text.slice(0, 300);
+    try {
+      const body = JSON.parse(text) as { detail?: unknown; error?: unknown; message?: unknown };
+      const value = body.detail ?? body.error ?? body.message;
+      if (typeof value === "string") detail = value;
+      else if (value) detail = JSON.stringify(value);
+    } catch {
+      /* keep the raw response */
+    }
+    throw new Error(detail || `请求失败（${res.status}）`);
   }
   const type = res.headers.get("content-type") || "";
   return (type.includes("application/json") ? res.json() : res.text()) as Promise<T>;
@@ -73,6 +88,26 @@ export const endpoints = {
   workspace: (params: string) => api.get<Record<string, unknown>>(`/api/workspace?${params}`),
 
   projects: () => api.get<{ projects: ProjectSummary[] }>("/api/projects"),
+
+  recreates: () => api.get<{ recreates: RecreateSummary[] }>("/api/recreate"),
+  recreate: (id: string) => api.get<RecreateDetail>(`/api/recreate/${encodeURIComponent(id)}`),
+  createRecreate: (body: { path: string; title?: string; rights_confirmed: boolean }) =>
+    api.post<{ recreate: RecreateDetail }>("/api/recreate", body),
+  recreateStep: (id: string, step: string, params: Record<string, unknown> = {}) =>
+    api.post<{ job: Job; step: string }>(`/api/recreate/${encodeURIComponent(id)}/steps/${step}`, { params }),
+  recreateOnetake: (id: string, body: { product: Record<string, unknown>; preset: Record<string, unknown> }) =>
+    api.post<{ job: Job }>(`/api/recreate/${encodeURIComponent(id)}/onetake`, body),
+
+  restyles: () => api.get<{ restyles: RestyleSummary[] }>("/api/restyle"),
+  restyle: (id: string) => api.get<RestyleDetail>(`/api/restyle/${encodeURIComponent(id)}`),
+  createRestyle: (body: { path: string; title?: string; rights_confirmed: boolean }) =>
+    api.post<{ restyle: RestyleDetail }>("/api/restyle", body),
+  analyzeRestyle: (id: string) =>
+    api.post<{ job: Job }>(`/api/restyle/${encodeURIComponent(id)}/analyze`),
+  saveRestylePlan: (id: string, revision: number, patch: Record<string, unknown>) =>
+    api.patch<{ plan: RestylePlan }>(`/api/restyle/${encodeURIComponent(id)}/plan`, { revision, patch }),
+  deleteRestyle: (id: string) =>
+    api.del<{ trash_id: string }>(`/api/restyle/${encodeURIComponent(id)}`),
   project: (id: string) => api.get<ProjectDetail>(`/api/projects/${encodeURIComponent(id)}`),
   createProject: (body: CreateProjectBody) =>
     api.post<{ project: ProjectRecord }>("/api/projects", body),
@@ -149,6 +184,10 @@ export const endpoints = {
 
   personas: () => api.get<{ personas: Persona[] }>("/api/personas"),
   createPersona: (body: Record<string, unknown>) => api.post<{ persona: Persona }>("/api/personas", body),
+  generatePersonaBaseVideo: (personaId: string, body: { prompt?: string; duration?: number; resolution?: string; provider?: string } = {}) =>
+    api.post<{ persona: Persona; base_video: Persona["base_videos"][number]; cost_usd: number }>(
+      `/api/personas/${encodeURIComponent(personaId)}/base-video`, body,
+    ),
   generatePersona: (body: Record<string, unknown>) => api.post<PersonaGeneration>("/api/personas/generate", body),
   patchPersona: (id: string, body: Record<string, unknown>) =>
     api.patch<{ persona: Persona }>(`/api/personas/${encodeURIComponent(id)}`, body),
@@ -188,6 +227,18 @@ export const endpoints = {
       `/api/projects/${encodeURIComponent(projectId)}/script`,
       { lines },
     ),
+  backfillNarration: (projectId: string) =>
+    api.post<{ project_id: string; updated: number }>(
+      `/api/projects/${encodeURIComponent(projectId)}/narration/backfill`, {},
+    ),
+  startAudioGeneration: (projectId: string, body: { shot_ids?: string[]; force?: boolean } = {}) =>
+    api.post<{ job_id: string; project_id: string; shots: number }>(
+      `/api/projects/${encodeURIComponent(projectId)}/audio/generate`, body,
+    ),
+  startAssetGeneration: (projectId: string, body: { shot_ids?: string[]; force?: boolean } = {}) =>
+    api.post<{ job_id: string; project_id: string; shots: number }>(
+      `/api/projects/${encodeURIComponent(projectId)}/assets/generate`, body,
+    ),
   compose: (projectId: string) =>
     api.post<{ job_id: string; output: string; composition: string }>(
       `/api/projects/${encodeURIComponent(projectId)}/compose`,
@@ -207,6 +258,16 @@ export const endpoints = {
   config: () => api.get<AppConfig>("/api/config"),
   saveConfig: (body: Record<string, unknown>) => api.post<AppConfig>("/api/config", body),
   notify: (title: string, body: string) => api.post<{ ok: boolean }>("/api/notify", { title, body }),
+
+  skills: () => api.get<{ skills: Skill[]; dir: string }>("/api/skills"),
+  createSkill: (body: { name: string; description: string; instructions: string }) =>
+    api.post<{ skill: Skill }>("/api/skills", body),
+  updateSkill: (
+    slug: string,
+    body: { name?: string; description?: string; instructions?: string },
+  ) => api.patch<{ skill: Skill }>(`/api/skills/${encodeURIComponent(slug)}`, body),
+  deleteSkill: (slug: string) =>
+    api.del<{ removed: boolean }>(`/api/skills/${encodeURIComponent(slug)}`),
 };
 
 /** Raw-body upload; kept here so components never touch fetch. */
@@ -217,7 +278,16 @@ export async function uploadAsset(file: File): Promise<Asset> {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${text.slice(0, 200)}`);
+    let detail = text.slice(0, 300);
+    try {
+      const body = JSON.parse(text) as { detail?: unknown; error?: unknown; message?: unknown };
+      const value = body.detail ?? body.error ?? body.message;
+      if (typeof value === "string") detail = value;
+      else if (value) detail = JSON.stringify(value);
+    } catch {
+      /* keep the raw response */
+    }
+    throw new Error(detail || `请求失败（${res.status}）`);
   }
   const data = (await res.json()) as { asset: Asset };
   return data.asset;

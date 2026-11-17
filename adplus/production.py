@@ -16,6 +16,7 @@ from typing import Any
 from adplus import project_store
 from adplus import capabilities as model_caps
 from adplus import pipeline_adapter
+from adplus import production_settings as settings_store
 
 PROJECTS = project_store.PROJECTS
 
@@ -93,6 +94,10 @@ def approvals_path(project_id: str) -> Path:
 
 def load_approvals(project_id: str) -> dict[str, Any]:
     return _read(approvals_path(project_id)) or {}
+
+
+def settings_summary(settings: dict[str, Any]) -> str:
+    return settings_store.summary(settings)
 
 
 def route_catalog() -> list[dict[str, Any]]:
@@ -234,6 +239,10 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
     shots = (version or {}).get("shots") or []
     render = (version or {}).get("render") or {}
     quote = project_store.latest_quote(project_id)
+    settings = project.get("production_settings") or {}
+    quote_revision = settings.get("revision") if isinstance(settings, dict) else None
+    if isinstance(quote, dict) and quote_revision is not None:
+        quote["stale"] = quote.get("settings_revision") is None or int(quote.get("settings_revision") or 0) != int(quote_revision)
     proposal = _read(PROJECTS / project_id / "artifacts" / "proposal_packet.json")
     script = script_for(project_id)
     final = _read(PROJECTS / project_id / "artifacts" / "final_review.json")
@@ -245,6 +254,8 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
     preview_count = sum(1 for shot in shots if shot.get("preview"))
     proposal_ready = bool(proposal or quote)
     quote_status = str((quote or {}).get("status") or "")
+    if isinstance(quote, dict) and quote.get("stale"):
+        quote_status = "stale"
     legacy = bool(render.get("path")) and not any(
         key in approvals for key in ("brief", "script", "scene", "assets", "compose")
     )
@@ -307,7 +318,32 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
         artifact="scene_plan / version.shots",
     ))
 
-    assets_done = (bool(approvals.get("assets")) and bool(shots)) or legacy
+    settings_revision = int((settings or {}).get("revision") or 1)
+    assets_current = (version or {}).get("settings_revision") in (None, settings_revision)
+    profile_audio_mode = str((settings or {}).get("audio", {}).get("mode") or "silent")
+    audio_required = [
+        shot for shot in shots
+        if (
+            str((shot.get("audio") or {}).get("mode") or profile_audio_mode) == "external_tts"
+            or str(shot.get("production_method") or "") in {"avatar", "lip_sync"}
+            or str(shot.get("kind") or "") == "talking_head"
+        )
+    ]
+    audio_ready = [
+        shot for shot in audio_required
+        if (shot.get("audio") or {}).get("status") == "ready" and (shot.get("audio") or {}).get("path")
+    ]
+    visual_stale = [
+        shot for shot in shots
+        if (shot.get("preview") and (shot.get("audio") or {}).get("audio_hash")
+            and (shot.get("generation_spec") or {}).get("audio_hash")
+            and (shot.get("audio") or {}).get("audio_hash") != (shot.get("generation_spec") or {}).get("audio_hash"))
+    ]
+    assets_ready = bool(shots) and assets_current and not visual_stale and (
+        str(route.get("id")) == "local_motion"
+        or (preview_count >= len(shots) and len(audio_ready) >= len(audio_required))
+    )
+    assets_done = bool(approvals.get("assets")) and assets_ready
     if assets_done:
         assets_status = "approved"
     elif shots:
@@ -317,13 +353,27 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
     stage_rows.append(_stage_base(
         "assets",
         assets_status,
-        summary=f"{preview_count}/{len(shots)} 镜有素材" if shots else "还没有镜头素材",
-        action="确认素材" if assets_status == "review" else ("已完成" if assets_status == "approved" else "准备素材"),
+        summary=(
+            f"配音 {len(audio_ready)}/{len(audio_required)} · 画面 {preview_count}/{len(shots)}"
+            if shots else "还没有镜头素材"
+        ),
+        action=(
+            "生成配音" if shots and len(audio_ready) < len(audio_required)
+            else "重新生成素材" if shots and not assets_current
+            else "重新生成画面" if shots and visual_stale
+            else "补齐画面" if shots and preview_count < len(shots)
+            else "确认素材" if assets_status == "review"
+            else "已完成" if assets_status == "approved"
+            else "准备素材"
+        ),
         artifact="asset_manifest / shot previews",
     ))
 
-    compose_done = (bool(approvals.get("compose")) and bool(render.get("path"))) or legacy
-    if compose_done:
+    render_current = (render.get("settings_revision") in (None, settings_revision))
+    compose_done = (bool(approvals.get("compose")) and bool(render.get("path")) and render_current) or legacy
+    if not render_current:
+        compose_status = "review" if render.get("path") else "ready"
+    elif compose_done:
         compose_status = "approved"
     elif render.get("path"):
         compose_status = "review"
@@ -337,6 +387,7 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
         artifact="render",
     ))
 
+    review_approved = bool(review_approved and render_current)
     if review_approved:
         review_status = "approved"
     elif render.get("path"):
@@ -368,8 +419,13 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
                 checkpoint_by_stage[str(canonical_stage)] = cp
                 row["checkpoint_status"] = cp.get("status")
                 if cp.get("status") == "completed":
-                    row["status"] = "approved"
-                    row["action"] = "已完成"
+                    if canonical_stage == "assets" and not assets_ready:
+                        row["status"] = "review"
+                        row["summary"] = f"{preview_count}/{len(shots)} 镜有素材"
+                        row["action"] = "补齐素材"
+                    else:
+                        row["status"] = "approved"
+                        row["action"] = "已完成"
                 elif cp.get("status") == "awaiting_human":
                     row["status"] = "review"
                 elif cp.get("status") in {"failed", "in_progress"}:
@@ -430,6 +486,8 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
         "checkpoints": checkpoint_status,
         "pipeline_mode": bool(checkpoint_by_stage),
         "models": model_caps.list_profiles(),
+        "settings": project.get("production_settings"),
+        "settings_summary": settings_summary(project.get("production_settings") or {}),
         "persona": project_store.persona_snapshot(project.get("persona_id")),
         "product": project_store.product_snapshot(project.get("product_id")),
         "brief": brief,
@@ -452,14 +510,35 @@ def production_payload(project_id: str) -> dict[str, Any] | None:
 
 
 def save_route(project_id: str, route_id: str) -> dict[str, Any]:
-    if route_id not in ROUTES:
+    catalog = {item["id"]: item for item in route_catalog()}
+    if route_id not in catalog:
         raise ValueError(f"unknown route {route_id!r}")
-    if not ROUTES[route_id].get("available"):
-        raise ValueError("该路线需要额外的素材/生成能力")
-    route = dict(ROUTES[route_id])
+    if not catalog[route_id].get("available"):
+        raise ValueError("该路线需要的生成能力当前不可用；请先在设置中配置对应的模型 key")
+    route = dict(catalog[route_id])
+    project = project_store.load_project(project_id) or {}
+    settings = dict(project.get("production_settings") or {})
+    settings["route_id"] = route_id
+    defaults = settings_store.ROUTE_DEFAULTS.get(route_id) or {}
+    visual = dict(settings.get("visual") or {})
+    for key in ("talking_head_profile", "broll_profile"):
+        if key not in visual or visual.get(key) in (None, ""):
+            visual[key] = defaults.get(key)
+    if not visual.get("product_profile"):
+        visual["product_profile"] = visual.get("broll_profile")
+    settings["visual"] = visual
+    audio = dict(settings.get("audio") or {})
+    if not audio.get("mode"):
+        audio["mode"] = defaults.get("audio_mode") or "silent"
+    settings["audio"] = audio
     return project_store.update_project(
         project_id,
-        {"route": route, "status": "briefing", "pipeline_type": route.get("pipeline") or "animation"},
+        {
+            "route": route,
+            "production_settings": settings,
+            "status": "briefing",
+            "pipeline_type": route.get("pipeline") or "animation",
+        },
     )
 
 
@@ -500,6 +579,16 @@ def approve(project_id: str, stage: str, comment: str = "") -> dict[str, Any]:
         raise ValueError("还没有脚本")
     if stage in ("scene", "assets") and not payload.get("shots"):
         raise ValueError("还没有分镜")
+    if stage == "assets":
+        shots = payload.get("shots") or []
+        previews = sum(1 for shot in shots if shot.get("preview"))
+        profile_audio_mode = str((payload.get("settings") or {}).get("audio", {}).get("mode") or "silent")
+        audio_required = [shot for shot in shots if str((shot.get("audio") or {}).get("mode") or profile_audio_mode) == "external_tts"]
+        audio_ready = [shot for shot in audio_required if (shot.get("audio") or {}).get("status") == "ready"]
+        if payload["route"].get("id") != "local_motion" and previews < len(shots):
+            raise ValueError(f"还有 {len(shots) - previews} 个镜头没有画面，不能确认")
+        if payload["route"].get("id") != "local_motion" and len(audio_ready) < len(audio_required):
+            raise ValueError(f"还有 {len(audio_required) - len(audio_ready)} 个镜头没有配音，不能确认")
     if stage == "compose" and not (payload.get("render") or {}).get("path"):
         raise ValueError("还没有可确认的成片")
     approvals = load_approvals(project_id)

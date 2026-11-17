@@ -82,7 +82,13 @@ def write_stage(
     return checkpoint.read_checkpoint(PROJECTS, project_id, stage) or {"path": str(path)}
 
 
-def sync_and_bootstrap(project_id: str, version_id: str | None = None, *, approve: bool = True) -> dict[str, Any]:
+def sync_and_bootstrap(
+    project_id: str,
+    version_id: str | None = None,
+    *,
+    approve: bool = True,
+    pipeline: str = DEFAULT_PIPELINE,
+) -> dict[str, Any]:
     """Write canonical artifacts, then advance idea/script/scene_plan."""
     init_project(project_id)
     synced = canonical_artifacts.sync_project(project_id, version_id)
@@ -100,6 +106,7 @@ def sync_and_bootstrap(project_id: str, version_id: str | None = None, *, approv
             stage,
             {artifact: artifacts[artifact]},
             approved=approve,
+            pipeline=pipeline,
             metadata={"adplus_sync": True},
         )
     return {"artifacts": synced, "checkpoints": rows}
@@ -231,8 +238,8 @@ def complete_render(
         product = products.load_product(product_id)
         if product is None:
             raise FileNotFoundError(f"product not found: {product_id}")
-        if not product.get("locked") or not (product.get("rights") or {}).get("ai_reference_allowed"):
-            raise ValueError("product must be locked and AI-reference allowed")
+        if not product.get("locked"):
+            raise ValueError("product must be locked")
         from tools.tool_registry import registry
         from adplus import oms_tools
         oms_tools.register()
@@ -336,7 +343,10 @@ def complete_render(
     if not compose_ok:
         version = project_store.load_version(project_id, version_id)
         if version is not None:
-            version["render"] = {"path": rel, "duration_s": duration, "width": width, "height": height}
+            version["render"] = {
+            "path": rel, "duration_s": duration, "width": width, "height": height,
+            "settings_revision": int((project_store.load_project(project_id) or {}).get("production_settings", {}).get("revision") or 1),
+        }
             project_store.save_version(version)
             project_store.update_project(project_id, {"status": "review"})
         return {"edit": edit_cp, "compose": compose_cp, "publish": None, "final_review": final, "render": rel}
@@ -354,7 +364,10 @@ def complete_render(
     publish_cp = write_stage(project_id, "publish", {"publish_log": publish}, approved=approved, pipeline=pipeline)
     version = project_store.load_version(project_id, version_id)
     if version is not None:
-        version["render"] = {"path": rel, "duration_s": duration, "width": width, "height": height}
+        version["render"] = {
+            "path": rel, "duration_s": duration, "width": width, "height": height,
+            "settings_revision": int((project_store.load_project(project_id) or {}).get("production_settings", {}).get("revision") or 1),
+        }
         project_store.save_version(version)
         project_store.update_project(project_id, {"status": "review"})
     return {"edit": edit_cp, "compose": compose_cp, "publish": publish_cp, "final_review": final, "render": rel}

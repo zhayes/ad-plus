@@ -49,6 +49,7 @@ export default function ProductsPanel(props: Props) {
   const [tagText, setTagText] = createSignal("");
   const [confirmDelete, setConfirmDelete] = createSignal(false);
   let fileInput: HTMLInputElement | undefined;
+  let detailInput: HTMLInputElement | undefined;
 
   const load = async () => {
     setLoading(true);
@@ -106,6 +107,41 @@ export default function ProductsPanel(props: Props) {
       setBusy(false);
       if (fileInput) fileInput.value = "";
     }
+  };
+
+  const uploadDetails = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setBusy(true);
+    setError("");
+    try {
+      const before = draft().detail_paths?.length ?? 0;
+      const paths = [...(draft().detail_paths ?? [])];
+      for (const file of Array.from(files).slice(0, 8)) {
+        const asset = await uploadAsset(file);
+        paths.push(asset.path);
+      }
+      update({ detail_paths: paths });
+      setMessage(`已添加 ${paths.length - before} 张附图。`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "附图上传失败");
+    } finally {
+      setBusy(false);
+      if (detailInput) detailInput.value = "";
+    }
+  };
+
+  const removeDetail = (index: number) => {
+    const paths = [...(draft().detail_paths ?? [])];
+    paths.splice(index, 1);
+    update({ detail_paths: paths });
+  };
+
+  const moveDetail = (index: number, direction: -1 | 1) => {
+    const paths = [...(draft().detail_paths ?? [])];
+    const target = index + direction;
+    if (target < 0 || target >= paths.length) return;
+    [paths[index], paths[target]] = [paths[target], paths[index]];
+    update({ detail_paths: paths });
   };
 
   const save = async () => {
@@ -221,7 +257,7 @@ export default function ProductsPanel(props: Props) {
           <div class="mb-4 flex items-start justify-between gap-3">
             <div>
               <div class="text-[14px] font-semibold text-text">{selectedId() ? "编辑商品" : "新建商品"}</div>
-              <p class="mt-1 text-[11px] leading-5 text-faint">锁定真实商品图、SKU 与授权；镜头只引用，不让模型重画包装文字。</p>
+              <p class="mt-1 text-[11px] leading-5 text-faint">锁定真实商品图与 SKU；镜头只引用，不让模型重画包装文字。</p>
             </div>
             <Show when={selectedId()}>
               <Button size="sm" variant="ghost" disabled={busy()} onClick={() => void remove()}>
@@ -276,22 +312,49 @@ export default function ProductsPanel(props: Props) {
                 <span class="mb-1 block text-[10.5px] text-faint">标签（逗号分隔）</span>
                 <Input value={tagText()} placeholder="无痕, 冰丝, 通勤" onInput={(event) => setTagText(event.currentTarget.value)} />
               </label>
+              <div class="rounded-lg border border-line-soft p-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10.5px] text-faint">商品附图</span>
+                  <span class="text-[9.5px] text-faint">材质 / 标签 / 背面 / 场景</span>
+                  <Button class="ml-auto" size="sm" variant="secondary" disabled={busy()} onClick={() => detailInput?.click()}>
+                    添加附图
+                  </Button>
+                </div>
+                <input
+                  ref={detailInput}
+                  type="file"
+                  multiple
+                  class="hidden"
+                  accept="image/*"
+                  onChange={(event) => void uploadDetails(event.currentTarget.files)}
+                />
+                <Show
+                  when={(draft().detail_paths ?? []).length > 0}
+                  fallback={<div class="mt-2 rounded-md border border-dashed border-line px-2 py-3 text-center text-[10px] text-faint">还没有附图；主图仍然用于商品 plate。</div>}
+                >
+                  <div class="mt-2 grid grid-cols-3 gap-2">
+                    <For each={draft().detail_paths ?? []}>
+                      {(path, index) => (
+                        <div class="overflow-hidden rounded-md border border-line-soft bg-[#0b0e15]">
+                          <img src={mediaUrl(path)} alt="" class="aspect-[4/3] w-full object-cover" />
+                          <div class="flex items-center gap-1 p-1">
+                            <button type="button" class="text-[10px] text-faint hover:text-text" title="前移" onClick={() => moveDetail(index(), -1)}>←</button>
+                            <button type="button" class="text-[10px] text-faint hover:text-text" title="后移" onClick={() => moveDetail(index(), 1)}>→</button>
+                            <button type="button" class="ml-auto text-[10px] text-faint hover:text-bad" title="删除" onClick={() => removeDetail(index())}>×</button>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+
               <div class="rounded-lg border border-line-soft bg-surface/50 p-3">
-                <div class="mb-2 text-[10.5px] text-faint">锁定与授权</div>
+                <div class="mb-2 text-[10.5px] text-faint">商品主图</div>
                 <label class="flex items-center gap-2 text-[11px] text-dim">
                   <input type="checkbox" checked={draft().locked} onChange={(event) => update({ locked: event.currentTarget.checked, status: event.currentTarget.checked ? "locked" : "draft" })} />
                   锁定为真实商品（镜头不得重画标签）
                 </label>
-                <div class="mt-2 grid grid-cols-2 gap-2">
-                  <label class="flex items-center gap-2 text-[11px] text-dim">
-                    <input type="checkbox" checked={draft().rights.ai_reference_allowed} onChange={(event) => update({ rights: { ...draft().rights, ai_reference_allowed: event.currentTarget.checked } })} />
-                    AI 参考允许
-                  </label>
-                  <label class="flex items-center gap-2 text-[11px] text-dim">
-                    <input type="checkbox" checked={draft().rights.commercial_use} onChange={(event) => update({ rights: { ...draft().rights, commercial_use: event.currentTarget.checked } })} />
-                    商用
-                  </label>
-                </div>
               </div>
               <div class="flex justify-end gap-2 pt-1">
                 <Button size="sm" variant="ghost" onClick={create}>取消</Button>

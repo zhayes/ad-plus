@@ -755,14 +755,47 @@ def om_quote(
         raise FileNotFoundError(f"no project at {PROJECTS_DIR / project_id}")
 
     assumptions: list[str] = []
+    project_data: dict[str, Any] = {}
+    try:
+        project_data = json.loads((PROJECTS_DIR / project_id / "project.json").read_text(encoding="utf-8"))
+    except Exception:
+        project_data = {}
+    settings = project_data.get("production_settings") if isinstance(project_data.get("production_settings"), dict) else {}
     if not shots:
         if not (brief or duration_seconds):
             raise ValueError("pass either `shots`, or `brief` + `duration_seconds`")
         shots, derived_render, assumptions = plan_from_brief(
-            brief, duration_seconds or 15, aspect, with_voice
+            brief, duration_seconds or 15, aspect, with_voice, settings=settings
         )
         render = render or derived_render
     quote = build_quote(project_id, shots or [], render or None, headline)
+    audio_cfg = settings.get("audio") if isinstance(settings.get("audio"), dict) else {}
+    visual_cfg = settings.get("visual") if isinstance(settings.get("visual"), dict) else {}
+    budget = settings.get("budget") if isinstance(settings.get("budget"), dict) else {}
+    audio_mode = str(audio_cfg.get("mode") or "silent")
+    audio_count = len([shot for shot in shots or [] if shot.get("tool") in {"seedance_ark", "minimax_video", "lip_sync", "kling_avatar", "heygen_avatar"}]) or len(shots or [])
+    if audio_mode == "external_tts":
+        provider = str(audio_cfg.get("provider") or "local")
+        line = {
+            "tool": "tts",
+            "label": f"配音 {audio_count} 镜 · {provider}",
+            "usd": 0.0 if provider == "local" else 0.0,
+            "unit_usd": 0.0,
+            "count": audio_count,
+            "seconds": 0.0,
+            "status": "free" if provider == "local" else "quote_required",
+        }
+        quote["line_items"].insert(0, line)
+    quote["settings_revision"] = int(settings.get("revision") or 1)
+    quote["revisions"] = settings.get("revisions") or {"audio": 1, "visual": 1}
+    quote["audio_revision"] = int((settings.get("revisions") or {}).get("audio") or 1)
+    quote["visual_revision"] = int((settings.get("revisions") or {}).get("visual") or 1)
+    quote["budget_usd"] = float(budget.get("total_usd") or 0)
+    quote["audio_budget_usd"] = float(budget.get("audio_usd") or 0)
+    quote["video_budget_usd"] = float(budget.get("video_usd") or 0)
+    quote["over_budget"] = bool(quote["budget_usd"]) and float(quote.get("total_usd") or 0) > float(quote["budget_usd"])
+    quote["over_audio_budget"] = bool(quote["audio_budget_usd"]) and float(audio_cfg.get("cost") or 0) > float(quote["audio_budget_usd"])
+    quote["over_video_budget"] = bool(quote["video_budget_usd"]) and float(quote.get("total_usd") or 0) > float(quote["video_budget_usd"])
     quote["assumptions"] = assumptions
     quote["id"] = agent_bridge.new_id("q")
     quote["status"] = "pending"
@@ -817,13 +850,18 @@ def om_proposal(
         raise ValueError("packet must be a non-empty object")
     concept = packet.get("concept") if isinstance(packet.get("concept"), dict) else {}
     title = str(headline or concept.get("title") or "方案")
-    duration = float(duration_seconds or 0)
-    if not duration:
-        try:
-            project = json.loads((project_root / "project.json").read_text(encoding="utf-8"))
-            duration = float(project.get("duration_s") or 15)
-        except Exception:
-            duration = 15.0
+    project = {}
+    try:
+        project = json.loads((project_root / "project.json").read_text(encoding="utf-8"))
+    except Exception:
+        project = {}
+    settings = project.get("production_settings") if isinstance(project.get("production_settings"), dict) else {}
+    output = settings.get("output") if isinstance(settings.get("output"), dict) else {}
+    duration = float(duration_seconds or output.get("duration_s") or project.get("duration_s") or 15)
+    aspect = str(aspect or output.get("aspect") or project.get("aspect") or "9:16")
+    if not with_voice:
+        generation = settings.get("generation") if isinstance(settings.get("generation"), dict) else {}
+        with_voice = str(generation.get("audio_mode") or "") != "silent"
     now = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     packet = {**packet, "generated_at": packet.get("generated_at") or now}
     target = project_root / "artifacts" / "proposal_packet.json"

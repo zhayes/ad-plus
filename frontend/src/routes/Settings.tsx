@@ -1,6 +1,7 @@
 import { For, Show, createMemo, createSignal, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import KeyRow, { type RowModel } from "../components/settings/KeyRow";
+import SkillsPanel from "../components/settings/SkillsPanel";
 import Button from "../components/ui/Button";
 import Logo from "../components/ui/Logo";
 import ModuleDock from "../components/layout/ModuleDock";
@@ -9,7 +10,7 @@ import Select from "../components/ui/Select";
 import { api } from "../lib/api";
 import type { AppConfig, BootstrapInfo, CapabilityRow, KeyInfo, PiIntegration, PiStatus, ProviderEntry } from "../lib/types";
 
-type Tab = "model" | "media" | "storage" | "notifications" | "shortcuts" | "advanced" | "about";
+type Tab = "model" | "skills" | "media" | "storage" | "notifications" | "shortcuts" | "advanced" | "about";
 
 interface Snapshot {
   keys: KeyInfo[];
@@ -249,6 +250,7 @@ export default function Settings() {
           <For
             each={[
               { id: "model" as Tab, label: "模型", count: modelCount },
+              { id: "skills" as Tab, label: "技能", count: () => "" },
               { id: "media" as Tab, label: "媒体服务", count: mediaCount },
               { id: "storage" as Tab, label: "输出与存储", count: () => "" },
               { id: "notifications" as Tab, label: "通知", count: () => "" },
@@ -290,6 +292,10 @@ export default function Settings() {
                   {(row) => <KeyRow item={row} onSave={saveKey} onClear={clearKey} />}
                 </For>
               </div>
+            </Show>
+
+            <Show when={tab() === "skills"}>
+              <SkillsPanel notify={notify} />
             </Show>
 
             <Show when={tab() === "media"}>

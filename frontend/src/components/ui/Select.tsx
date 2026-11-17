@@ -38,16 +38,16 @@ export default function Select(props: Props) {
       )}
     >
       <KSelect.Trigger
-        class={`flex h-8 items-center gap-1 rounded-md px-2 text-[12px] text-dim outline-none transition-colors hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 ${props.variant === "pill" ? "border border-line bg-surface px-3" : ""} ${props.class ?? ""}`}
+        class={`flex h-8 min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap rounded-md px-2 text-[12px] text-dim outline-none transition-colors hover:bg-surface-2 hover:text-text focus-visible:bg-surface-2 ${props.variant === "pill" ? "border border-line bg-surface px-3" : ""} ${props.class ?? ""}`}
       >
         <KSelect.Value<Option>>
           {(state) => (
-            <span class="text-text">
+            <span class="min-w-0 truncate text-text">
               {state.selectedOption()?.hint ?? state.selectedOption()?.label ?? props.placeholder}
             </span>
           )}
         </KSelect.Value>
-        <KSelect.Icon class="text-faint">
+        <KSelect.Icon class="ml-auto shrink-0 text-faint">
           <Icon name="chevron-down" size={13} />
         </KSelect.Icon>
       </KSelect.Trigger>

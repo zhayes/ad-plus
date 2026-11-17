@@ -250,8 +250,36 @@ def upload_asset(raw: bytes, name: str) -> dict[str, Any]:
         stem, suffix = base, ""
     digest = hashlib.sha1(raw[:1_000_000]).hexdigest()[:8]
     target = directory / (f"{stem}-{digest}" + (f".{suffix}" if suffix else ""))
+    if kind_of(target) == "file":
+        raise ValueError("unsupported file type")  # reject before writing junk to uploads/
     target.write_bytes(raw)
     record = _record(target, "upload", None)
     if record is None:
         raise ValueError("unsupported file type")
     return record
+
+
+def attach_file(raw: bytes, name: str) -> dict[str, Any]:
+    """Chat attachment of any type: kept outside the asset library.
+
+    Scripts, notes, subtitle files and PDFs are not media, but the agent can
+    still read them from the workspace path we hand back.
+    """
+    if not raw:
+        raise ValueError("empty attachment")
+    directory = UPLOADS / "attachments" / time.strftime("%Y%m%d")
+    directory.mkdir(parents=True, exist_ok=True)
+    base = _safe_name(name or "attachment")
+    stem, dot, suffix = base.rpartition(".")
+    if not dot:
+        stem, suffix = base, ""
+    digest = hashlib.sha1(raw[:1_000_000]).hexdigest()[:8]
+    target = directory / (f"{stem}-{digest}" + (f".{suffix}" if suffix else ""))
+    target.write_bytes(raw)
+    rel = _workspace_rel(target)
+    return {
+        "id": asset_id(rel),
+        "name": target.name,
+        "path": rel,
+        "bytes": len(raw),
+    }

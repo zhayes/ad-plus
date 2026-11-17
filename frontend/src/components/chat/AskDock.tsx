@@ -57,6 +57,7 @@ function AskCard(props: { item: AskItem }) {
   const [comment, setComment] = createSignal("");
   const [busy, setBusy] = createSignal(false);
   const [done, setDone] = createSignal<"approved" | "rejected" | null>(null);
+  const [error, setError] = createSignal("");
 
   const quote = () => props.item.quote;
   const approval = () => props.item.approval;
@@ -64,11 +65,13 @@ function AskCard(props: { item: AskItem }) {
 
   const submit = async (approved: boolean, note = "") => {
     setBusy(true);
+    setError("");
     try {
       await decide(props.item, approved, note);
       setDone(approved ? "approved" : "rejected");
-    } catch {
+    } catch (err) {
       setBusy(false);
+      setError(err instanceof Error ? err.message : "提交失败，请重试");
     }
   };
 
@@ -159,6 +162,11 @@ function AskCard(props: { item: AskItem }) {
         <Button size="sm" disabled={!!done()} onClick={() => setRejecting(true)}>
           {isQuote() ? "改方案" : "打回"}
         </Button>
+        <Show when={error()}>
+          <span class="ml-auto max-w-[55%] truncate text-[11.5px] text-warn" title={error()}>
+            {error()}
+          </span>
+        </Show>
         <Show when={done()}>
           <span
             class="ml-auto text-[11.5px]"

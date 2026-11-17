@@ -16,26 +16,50 @@ interface Props {
   onStop: () => void;
 }
 
+const MEDIA = /\.(png|jpe?g|webp|gif|avif|heic|mp4|mov|webm|m4v|mp3|wav|m4a|aac|flac|ogg)$/i;
+
 export default function Composer(props: Props) {
   const [text, setText] = createSignal("");
   const [files, setFiles] = createSignal<Attachment[]>([]);
   const [uploading, setUploading] = createSignal(false);
+  const [dragging, setDragging] = createSignal(false);
+  const [error, setError] = createSignal("");
   let area: HTMLTextAreaElement | undefined;
   let picker: HTMLInputElement | undefined;
 
-  const upload = async (list: FileList | null) => {
-    if (!list?.length) return;
+  const failureText = (status: number, body: string) => {
+    try {
+      const detail = (JSON.parse(body) as { detail?: unknown }).detail;
+      if (typeof detail === "string") return detail;
+    } catch {
+      /* not JSON */
+    }
+    return `上传失败（${status}）`;
+  };
+
+  const upload = async (list: FileList | null | undefined) => {
+    const picked = Array.from(list ?? []);
+    if (!picked.length) return;
+    setError("");
     setUploading(true);
     try {
-      for (const file of Array.from(list).slice(0, 6)) {
-        const res = await fetch(`/api/upload?name=${encodeURIComponent(file.name)}`, {
+      for (const file of picked.slice(0, 6)) {
+        // Media goes into the asset library; anything else (text, srt, pdf) is
+        // attached by path so the agent can read it from the workspace.
+        const endpoint = MEDIA.test(file.name) ? "/api/upload" : "/api/attach";
+        const res = await fetch(`${endpoint}?name=${encodeURIComponent(file.name)}`, {
           method: "POST",
           body: file,
         });
-        if (!res.ok) continue;
+        if (!res.ok) {
+          setError(`${file.name}：${failureText(res.status, await res.text().catch(() => ""))}`);
+          continue;
+        }
         const data = (await res.json()) as { name: string; path: string };
         setFiles((prev) => [...prev, { name: data.name || file.name, path: data.path }]);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "上传失败，请重试");
     } finally {
       setUploading(false);
       if (picker) picker.value = "";
@@ -54,10 +78,27 @@ export default function Composer(props: Props) {
   return (
     <div class="shrink-0 px-4 pb-3">
       <div class="mx-auto w-full max-w-[760px]">
-        <div class="flex items-end gap-2 rounded-xl border border-line bg-surface px-3 py-2">
+        <div
+          class={`flex items-end gap-2 rounded-xl border bg-surface px-3 py-2 transition-colors ${
+            dragging() ? "border-accent/70 ring-2 ring-accent/25" : "border-line"
+          }`}
+          onDragOver={(event) => {
+            event.preventDefault();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+            setDragging(true);
+          }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            void upload(event.dataTransfer?.files);
+          }}
+        >
           <button
             class="mb-1 grid h-7 w-7 shrink-0 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-text"
-            title="上传素材（或拖进窗口）"
+            title="上传素材或文件（脚本、字幕、文本都行），也可以直接拖到这个框里"
             onClick={() => picker?.click()}
           >
             <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -95,7 +136,7 @@ export default function Composer(props: Props) {
               size="sm"
               class="mb-1 h-8 w-8 !px-0"
               onClick={send}
-              disabled={!text().trim()}
+              disabled={!text().trim() && files().length === 0}
               title="发送"
             >
               <Icon name="arrow-up" size={16} />
@@ -125,6 +166,19 @@ export default function Composer(props: Props) {
               </span>
             </Show>
           </div>
+        </Show>
+
+        <Show when={error()}>
+          <div class="mt-1.5 flex items-center gap-2 text-[10.5px] text-bad">
+            <span class="min-w-0 flex-1 truncate" title={error()}>{error()}</span>
+            <button type="button" class="text-faint hover:text-text" title="关闭" onClick={() => setError("")}>
+              ×
+            </button>
+          </div>
+        </Show>
+
+        <Show when={dragging()}>
+          <div class="mt-1.5 text-[10.5px] text-accent">松开上传（图片 / 视频 / 音频，最多 6 个）</div>
         </Show>
 
         <div class="mt-2 flex items-center gap-2 text-[10.5px] text-faint">

@@ -163,6 +163,16 @@ def asset_manifest_from_version(project: dict[str, Any], version: dict[str, Any]
             "source_tool": "adplus",
             "scene_id": str(shot.get("id") or ""),
         })
+        audio = shot.get("audio") if isinstance(shot.get("audio"), dict) else {}
+        if audio.get("status") == "ready" and audio.get("path"):
+            assets.append({
+                "id": f"audio_{shot.get('id')}",
+                "type": "audio",
+                "path": str(audio["path"]),
+                "source_tool": "tts",
+                "scene_id": str(shot.get("id") or ""),
+                "duration_s": float(audio.get("duration_s") or 0),
+            })
     return {"version": "1.0", "assets": assets, "total_cost_usd": float(version.get("cost_usd") or 0), "metadata": {"adplus_project_id": project["project_id"]}}
 
 

@@ -1,21 +1,20 @@
 import { For } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import Icon, { type IconName } from "../ui/Icon";
-import { firstProjectId } from "../../stores/projects";
 
-export type ModuleKey = "projects" | "studio" | "create" | "assets" | "tasks" | "settings";
+export type ModuleKey = "projects" | "create" | "restyle" | "recreate" | "assets" | "tasks" | "settings";
 
 interface Props {
   active: ModuleKey;
   footer?: string;
 }
 
-const ITEMS: { key: ModuleKey; label: string; icon: IconName; path: () => string }[] = [
-  { key: "projects", label: "项目", icon: "folder", path: () => "/projects" },
-  { key: "studio", label: "制作", icon: "clapperboard", path: () => (firstProjectId() ? `/studio/${firstProjectId()}` : "/projects") },
-  { key: "create", label: "自由创作", icon: "sparkles", path: () => "/chat" },
-  { key: "assets", label: "资产", icon: "library", path: () => "/assets" },
-  { key: "tasks", label: "任务", icon: "list-checks", path: () => "/tasks" },
+const ITEMS: { key: ModuleKey; label: string; icon: IconName; path: string }[] = [
+  { key: "projects", label: "项目", icon: "folder", path: "/projects" },
+  { key: "create", label: "自由创作", icon: "sparkles", path: "/chat" },
+  { key: "restyle", label: "改写", icon: "layers", path: "/restyle" },
+  { key: "assets", label: "资产", icon: "library", path: "/assets" },
+  { key: "tasks", label: "任务", icon: "list-checks", path: "/tasks" },
 ];
 
 const UTILITIES: { key: ModuleKey; label: string; icon: IconName; path: string }[] = [
@@ -31,15 +30,6 @@ const ACTIVE_RAISED =
 export default function ModuleDock(props: Props) {
   const navigate = useNavigate();
 
-  const open = (item: (typeof ITEMS)[number]) => {
-    if (item.key === "studio" && !firstProjectId()) {
-      navigate("/projects");
-      window.setTimeout(() => window.dispatchEvent(new CustomEvent("adplus-new-project")), 80);
-      return;
-    }
-    navigate(item.path());
-  };
-
   return (
     <nav class="flex h-12 shrink-0 items-center gap-1 border-t border-line bg-[#141a26] px-2 shadow-[0_-8px_24px_rgba(0,0,0,0.22)]">
       <For each={ITEMS}>
@@ -51,8 +41,7 @@ export default function ModuleDock(props: Props) {
               class={`flex h-9 items-center gap-2 rounded-lg px-3 text-[12px] transition-all duration-150 ${
                 active() ? ACTIVE_RAISED : "text-dim hover:bg-surface-2/70 hover:text-text"
               }`}
-              title={item.key === "studio" && !firstProjectId() ? "先新建项目，再进入制作" : undefined}
-              onClick={() => open(item)}
+              onClick={() => navigate(item.path)}
             >
               <Icon name={item.icon} size={16} class={active() ? "text-white" : "text-faint"} />
               {item.label}

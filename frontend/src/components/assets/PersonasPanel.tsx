@@ -1,15 +1,19 @@
-import { For, Show, createSignal, onMount } from "solid-js";
-import Badge from "../ui/Badge";
+import { For, Show, createEffect, createSignal, onMount } from "solid-js";
 import Dialog from "../ui/Dialog";
+import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import Icon from "../ui/Icon";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 import { endpoints, uploadAsset } from "../../lib/api";
 import { mediaUrl } from "../../lib/projects";
-import type { Persona, PersonaCandidate, PersonaKind } from "../../lib/types";
+import type { Asset, Persona, PersonaCandidate, PersonaKind } from "../../lib/types";
 
 interface Props {
-  onPrimaryReady?: (open: () => void) => void;
+  initialId?: string | null;
+  hideList?: boolean;
+  onClose?: () => void;
+  onSaved?: (id: string) => void;
 }
 
 const KINDS: { value: PersonaKind; label: string }[] = [
@@ -33,6 +37,8 @@ function emptyPersona(): Persona {
     wardrobe: "",
     scene: "",
     tags: [],
+    voice: { provider: "", voice_id: "", language: "zh-CN", speed: 1.0, sample_path: "" },
+    base_videos: [],
     rights: { ai_allowed: false, consent: false, commercial_use: false, note: "" },
     providers: {},
   };
@@ -42,22 +48,30 @@ function fromPersona(persona: Persona): Persona {
   return {
     ...persona,
     tags: [...(persona.tags ?? [])],
+    voice: { ...(persona.voice ?? {}) },
+    base_videos: [...(persona.base_videos ?? [])],
     rights: { ...persona.rights },
     providers: { ...(persona.providers ?? {}) },
   };
 }
 
+type PersonaDraftCache = { id: string | null; draft: Persona; tags: string; creating: boolean };
+let PERSONA_CACHE: PersonaDraftCache | null = null;
+
 export default function PersonasPanel(props: Props) {
+  const cached = props.initialId ? null : PERSONA_CACHE;
   const [rows, setRows] = createSignal<Persona[]>([]);
-  const [selectedId, setSelectedId] = createSignal<string | null>(null);
-  const [draft, setDraft] = createSignal<Persona>(emptyPersona());
+  const [selectedId, setSelectedId] = createSignal<string | null>(cached?.id ?? null);
+  const [draft, setDraft] = createSignal<Persona>(cached?.draft ?? emptyPersona());
+  const [creating, setCreating] = createSignal(cached?.creating ?? false);
   const [loading, setLoading] = createSignal(true);
   const [saving, setSaving] = createSignal(false);
   const [busy, setBusy] = createSignal(false);
+  const [baseBusy, setBaseBusy] = createSignal(false);
   const [error, setError] = createSignal("");
   const [message, setMessage] = createSignal("");
   const [confirmDelete, setConfirmDelete] = createSignal(false);
-  const [tagText, setTagText] = createSignal("");
+  const [tagText, setTagText] = createSignal(cached?.tags ?? "");
   const [genBusy, setGenBusy] = createSignal(false);
   const [genOpen, setGenOpen] = createSignal(false);
   const [genTab, setGenTab] = createSignal<"text" | "reference">("text");
@@ -67,8 +81,14 @@ export default function PersonasPanel(props: Props) {
   const [genRef, setGenRef] = createSignal<string | null>(null);
   const [genCandidates, setGenCandidates] = createSignal<PersonaCandidate[]>([]);
   const [genCost, setGenCost] = createSignal(0);
+  const [assetOpen, setAssetOpen] = createSignal(false);
+  const [assetLoading, setAssetLoading] = createSignal(false);
+  const [assetRows, setAssetRows] = createSignal<Asset[]>([]);
+  const [assetQuery, setAssetQuery] = createSignal("");
+  const [assetError, setAssetError] = createSignal("");
   let fileInput: HTMLInputElement | undefined;
   let genFileInput: HTMLInputElement | undefined;
+  let baseVideoInput: HTMLInputElement | undefined;
 
   const load = async () => {
     setLoading(true);
@@ -76,10 +96,18 @@ export default function PersonasPanel(props: Props) {
     try {
       const data = await endpoints.personas();
       setRows(data.personas ?? []);
-      if (!selectedId() && data.personas?.length) select(data.personas[0]);
+      if (props.initialId && props.initialId !== "new") {
+        const target = (data.personas ?? []).find((item) => item.id === props.initialId);
+        if (target) select(target);
+      } else if (props.initialId === "new") {
+        if (!creating()) create();
+      } else if (!selectedId() && !creating() && data.personas?.length) {
+        select(data.personas[0]);
+      }
       if (selectedId() && !data.personas?.some((item) => item.id === selectedId())) {
         setSelectedId(null);
         setDraft(emptyPersona());
+        setCreating(true);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "数字人加载失败");
@@ -89,6 +117,7 @@ export default function PersonasPanel(props: Props) {
   };
 
   const select = (persona: Persona) => {
+    setCreating(false);
     setSelectedId(persona.id || null);
     setDraft(fromPersona(persona));
     setTagText((persona.tags ?? []).join(", "));
@@ -98,20 +127,57 @@ export default function PersonasPanel(props: Props) {
   };
 
   const create = () => {
+    setCreating(true);
     setSelectedId(null);
     setDraft(emptyPersona());
     setTagText("");
     setConfirmDelete(false);
-    setMessage("新数字模特：上传一张清晰人像后保存");
+    setMessage("");
     setError("");
   };
 
+  createEffect(() => {
+    PERSONA_CACHE = { id: selectedId(), draft: draft(), tags: tagText(), creating: creating() };
+  });
+
   onMount(() => {
     void load();
-    props.onPrimaryReady?.(create);
   });
 
   const update = (patch: Partial<Persona>) => setDraft((prev) => ({ ...prev, ...patch }));
+
+  const loadImageAssets = async () => {
+    setAssetLoading(true);
+    setAssetError("");
+    try {
+      const data = await endpoints.assets({ kind: "image" });
+      setAssetRows(data.assets ?? []);
+    } catch (err) {
+      setAssetError(err instanceof Error ? err.message : "素材加载失败");
+    } finally {
+      setAssetLoading(false);
+    }
+  };
+
+  const openAssetPicker = () => {
+    setAssetOpen(true);
+    setAssetQuery("");
+    void loadImageAssets();
+  };
+
+  const filteredAssets = () => {
+    const query = assetQuery().trim().toLowerCase();
+    if (!query) return assetRows();
+    return assetRows().filter((asset) =>
+      `${asset.name} ${asset.path}`.toLowerCase().includes(query),
+    );
+  };
+
+  const chooseAsset = (asset: Asset) => {
+    update({ source_path: asset.path, preview_path: asset.path, status: "ready" });
+    setAssetOpen(false);
+    setMessage("已从素材库选入人像。");
+  };
 
   const uploadReference = async (file: File) => {
     setGenBusy(true);
@@ -172,7 +238,7 @@ export default function PersonasPanel(props: Props) {
       kind: "photo",
       description: draft().description || genPrompt().trim() || "AI 生成的虚构数字模特",
     });
-    setMessage("已选用该候选；确认名称和授权后保存。");
+    setMessage("已选用该候选。");
     setGenOpen(false);
   };
 
@@ -182,7 +248,7 @@ export default function PersonasPanel(props: Props) {
     try {
       const asset = await uploadAsset(file);
       update({ source_path: asset.path, preview_path: asset.path, status: "ready" });
-      setMessage("人像已上传；确认授权后保存。");
+      setMessage("人像已上传。");
     } catch (err) {
       setError(err instanceof Error ? err.message : "上传失败");
     } finally {
@@ -191,10 +257,38 @@ export default function PersonasPanel(props: Props) {
     }
   };
 
-  const save = async () => {
+  const uploadBaseVideo = async (file: File) => {
+    setBusy(true);
+    setError("");
+    try {
+      const asset = await uploadAsset(file);
+      update({
+        base_videos: [...(draft().base_videos ?? []), {
+          id: `bv_${Date.now()}`,
+          path: asset.path,
+          framing: "half_body",
+          silent: true,
+        }],
+      });
+      setMessage("基础视频已添加；建议使用无声视频，后续由 TTS 驱动口型。");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "基础视频上传失败");
+    } finally {
+      setBusy(false);
+      if (baseVideoInput) baseVideoInput.value = "";
+    }
+  };
+
+  const removeBaseVideo = (index: number) => {
+    const rows = [...(draft().base_videos ?? [])];
+    rows.splice(index, 1);
+    update({ base_videos: rows });
+  };
+
+  const save = async (): Promise<Persona | null> => {
     if (!draft().name.trim()) {
       setError("先给数字模特起个名字");
-      return;
+      return null;
     }
     setSaving(true);
     setError("");
@@ -212,6 +306,8 @@ export default function PersonasPanel(props: Props) {
       wardrobe: draft().wardrobe ?? "",
       scene: draft().scene ?? "",
       tags: tagText().split(",").map((item) => item.trim()).filter(Boolean),
+      voice: draft().voice ?? {},
+      base_videos: draft().base_videos ?? [],
       rights: draft().rights,
       providers: draft().providers ?? {},
     };
@@ -222,10 +318,34 @@ export default function PersonasPanel(props: Props) {
       await load();
       select(data.persona);
       setMessage("已保存，可在后续项目中直接复用。");
+      props.onSaved?.(data.persona.id);
+      return data.persona;
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");
+      return null;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveAndGenerate = async () => {
+    if (!hasSourceImage()) {
+      setError("先上传人像或自动生成一张人像，才能生成形象视频");
+      return;
+    }
+    const persona = await save();
+    if (!persona) return;
+    setBaseBusy(true);
+    setError("");
+    try {
+      const result = await endpoints.generatePersonaBaseVideo(persona.id, { provider: "seedance" });
+      setDraft((previous) => ({ ...previous, base_videos: result.persona.base_videos ?? [] }));
+      setMessage(`形象视频已生成（Seedance）${result.cost_usd ? ` · $${result.cost_usd.toFixed(2)}` : ""}`);
+    } catch (err) {
+      setMessage("数字人已保存；形象视频未生成。");
+      setError(err instanceof Error ? err.message : "形象视频生成失败");
+    } finally {
+      setBaseBusy(false);
     }
   };
 
@@ -250,18 +370,40 @@ export default function PersonasPanel(props: Props) {
     }
   };
 
-  const rights = () => draft().rights;
+  const hasSourceImage = () => Boolean(draft().source_path || draft().preview_path);
+  const canProviderGenerate = () => Boolean(selectedId()) && hasSourceImage() && !busy() && !saving() && !baseBusy();
 
-  const setRight = (key: "ai_allowed" | "consent" | "commercial_use", value: boolean) => {
-    update({ rights: { ...rights(), [key]: value } });
+  const generateBaseVideo = async (provider: "seedance" | "minimax" = "seedance") => {
+    if (!selectedId()) {
+      setError("先保存数字模特，再生成基础视频");
+      return;
+    }
+    if (!hasSourceImage()) {
+      setError("先上传人像或自动生成一张人像，才能生成形象视频");
+      return;
+    }
+    setBaseBusy(true);
+    setError("");
+    try {
+      const result = await endpoints.generatePersonaBaseVideo(selectedId()!, { provider });
+      setRows((previous) => previous.map((item) => item.id === result.persona.id ? result.persona : item));
+      setDraft((previous) => ({ ...previous, base_videos: result.persona.base_videos ?? [] }));
+      setMessage(`基础视频已生成${result.cost_usd ? ` · $${result.cost_usd.toFixed(2)}` : ""}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "基础视频生成失败");
+    } finally {
+      setBaseBusy(false);
+    }
   };
 
   return (
-    <div class="grid h-full min-h-0 grid-cols-[260px_minmax(0,1fr)] gap-0 overflow-hidden">
+    <div class={`grid h-full min-h-0 gap-0 overflow-hidden ${props.hideList ? "grid-cols-1" : "grid-cols-[260px_minmax(0,1fr)]"}`}>
+      <Show when={!props.hideList}>
       <aside class="min-h-0 overflow-auto border-r border-line-soft bg-surface/40 p-3">
-        <div class="mb-2 flex items-center justify-between">
+        <div class="mb-2 flex items-center gap-1.5">
           <span class="text-[10.5px] uppercase tracking-wide text-faint">数字模特库</span>
           <span class="text-[10px] text-faint">{rows().length}</span>
+          <button type="button" class="ml-auto rounded border border-accent/40 bg-accent/5 px-1.5 py-0.5 text-[10px] text-accent hover:bg-accent/10" onClick={create}>+ 新增</button>
         </div>
         <Show when={!loading()} fallback={<div class="py-8 text-center text-[11px] text-faint">加载中…</div>}>
           <Show
@@ -304,9 +446,6 @@ export default function PersonasPanel(props: Props) {
                       <div class="truncate text-[11.5px] text-text">{persona.name}</div>
                       <div class="mt-0.5 flex items-center gap-1.5">
                         <span class="text-[9.5px] text-faint">{persona.kind === "photo" ? "照片" : persona.kind === "video" ? "视频" : "数字人"}</span>
-                        <Show when={persona.rights?.ai_allowed && persona.rights?.consent}>
-                          <Badge tone="good">已授权</Badge>
-                        </Show>
                       </div>
                     </div>
                   </button>
@@ -316,14 +455,18 @@ export default function PersonasPanel(props: Props) {
           </Show>
         </Show>
       </aside>
+      </Show>
 
       <section class="min-h-0 overflow-auto p-5">
         <div class="mx-auto max-w-[760px]">
           <div class="mb-4 flex items-start justify-between gap-3">
-            <div>
+            <div class="min-w-0">
+              <Show when={props.hideList && props.onClose}>
+                <button type="button" class="mb-2 text-[10.5px] text-faint hover:text-text" onClick={() => props.onClose?.()}>← 返回数字人列表</button>
+              </Show>
               <div class="text-[14px] font-semibold text-text">{selectedId() ? "编辑数字模特" : "新建数字模特"}</div>
               <p class="mt-1 text-[11px] leading-5 text-faint">
-                一次建立，后续项目直接引用。人像、授权和 provider id 分开管理。
+                一次建立，后续项目直接引用。人像与 provider id 分开管理。
               </p>
             </div>
             <Show when={selectedId()}>
@@ -373,8 +516,8 @@ export default function PersonasPanel(props: Props) {
                 }}
               />
               <div class="mt-2 grid grid-cols-2 gap-2">
-                <Button size="sm" variant="secondary" disabled={busy()} onClick={() => fileInput?.click()}>
-                  {busy() ? "上传中…" : "更换人像"}
+                <Button size="sm" variant="secondary" disabled={busy()} onClick={openAssetPicker}>
+                  从素材导入
                 </Button>
                 <Button size="sm" variant="primary" onClick={openGenerator}>
                   自动生成
@@ -383,6 +526,66 @@ export default function PersonasPanel(props: Props) {
             </div>
 
             <div class="space-y-3">
+              <div class="rounded-lg border border-line-soft p-3">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-[10.5px] text-faint">数字人形象视频</span>
+                  <span class="text-[9.5px] text-faint">生成一次，后续镜头复用</span>
+                  <span class="text-[9px] text-faint">Seedance 常拦截真人感图片；可换 MiniMax 或上传视频</span>
+                  <Show when={(draft().base_videos ?? []).length > 0}>
+                    <Badge tone="ok">已就绪</Badge>
+                  </Show>
+                  <Button class="ml-auto" size="sm" variant="secondary" disabled={busy()} onClick={() => baseVideoInput?.click()}>
+                    上传视频
+                  </Button>
+                  <Button size="sm" variant="secondary" loading={baseBusy()} disabled={!canProviderGenerate()} onClick={() => void generateBaseVideo("seedance")}>
+                    Seedance
+                  </Button>
+                  <Button size="sm" variant="secondary" loading={baseBusy()} disabled={!canProviderGenerate()} onClick={() => void generateBaseVideo("minimax")}>
+                    MiniMax
+                  </Button>
+                </div>
+                <Show when={!hasSourceImage()}>
+                  <div class="mt-2 text-[9.5px] text-warn">先上传人像，Seedance / MiniMax 才会解锁。</div>
+                </Show>
+                <Show when={hasSourceImage() && !selectedId()}>
+                  <div class="mt-2 text-[9.5px] text-faint">这是新数字人：点底部“保存并生成”，或先“只保存”再点上方生成。</div>
+                </Show>
+                <input
+                  ref={baseVideoInput}
+                  type="file"
+                  class="hidden"
+                  accept="video/*"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0];
+                    if (file) void uploadBaseVideo(file);
+                  }}
+                />
+                <Show
+                  when={(draft().base_videos ?? []).length > 0}
+                  fallback={<div class="mt-2 rounded-md border border-dashed border-line px-2 py-3 text-center text-[10px] leading-5 text-faint">还没有形象视频。静态图 + Wav2Lip 只会动嘴，建议先上传真实表演，或用 Seedance 生成。</div>}
+                >
+                  <video
+                    controls
+                    preload="metadata"
+                    src={mediaUrl((draft().base_videos ?? [])[0].path) ?? undefined}
+                    class="mt-2 aspect-[9/16] max-h-[260px] w-full rounded-md bg-black object-contain"
+                  />
+                  <div class="mt-2 space-y-1.5">
+                    <For each={draft().base_videos ?? []}>
+                      {(video, index) => (
+                        <div class="flex items-center gap-2 rounded-md border border-line-soft bg-surface-2/40 px-2 py-1.5">
+                          <span class="text-[18px] text-faint">▣</span>
+                          <span class="min-w-0 flex-1 truncate font-mono text-[9.5px] text-dim">{video.path}</span>
+                          <span class="text-[9px] text-faint">{video.silent ? "无声" : "有声音"}</span>
+                          <button type="button" class="text-[11px] text-faint hover:text-bad" onClick={() => removeBaseVideo(index())}>×</button>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+
+
               <label class="block">
                 <span class="mb-1 block text-[10.5px] text-faint">名称</span>
                 <Input value={draft().name} placeholder="例如：小夏 · 通勤" onInput={(event) => update({ name: event.currentTarget.value })} />
@@ -439,28 +642,38 @@ export default function PersonasPanel(props: Props) {
                 <Input value={tagText()} placeholder="clean, 通勤, 25-30" onInput={(event) => setTagText(event.currentTarget.value)} />
               </label>
 
-              <div class="rounded-lg border border-line-soft bg-surface/50 p-3">
-                <div class="mb-2 text-[10.5px] text-faint">授权</div>
-                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <label class="flex items-center gap-2 text-[11px] text-dim">
-                    <input type="checkbox" checked={rights().ai_allowed} onChange={(event) => setRight("ai_allowed", event.currentTarget.checked)} />
-                    AI 生成允许
-                  </label>
-                  <label class="flex items-center gap-2 text-[11px] text-dim">
-                    <input type="checkbox" checked={rights().consent} onChange={(event) => setRight("consent", event.currentTarget.checked)} />
-                    肖像授权
-                  </label>
-                  <label class="flex items-center gap-2 text-[11px] text-dim">
-                    <input type="checkbox" checked={rights().commercial_use} onChange={(event) => setRight("commercial_use", event.currentTarget.checked)} />
-                    商用
-                  </label>
+              <div class="rounded-lg border border-line-soft p-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10.5px] text-faint">声音</span>
+                  <span class="text-[9.5px] text-faint">项目默认继承</span>
                 </div>
-                <Input
-                  class="mt-2"
-                  value={rights().note ?? ""}
-                  placeholder="授权备注 / 到期日"
-                  onInput={(event) => update({ rights: { ...rights(), note: event.currentTarget.value } })}
-                />
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                  <Select
+                    value={draft().voice?.provider ?? ""}
+                    options={[
+                      { value: "", label: "未配置" },
+                      { value: "local", label: "本地系统声音" },
+                      { value: "minimax", label: "MiniMax" },
+                      { value: "elevenlabs", label: "ElevenLabs" },
+                      { value: "heygen", label: "HeyGen" },
+                    ]}
+                    onChange={(value) => update({ voice: { ...(draft().voice ?? {}), provider: value } })}
+                    variant="pill"
+                  />
+                  <Input
+                    value={draft().voice?.voice_id ?? ""}
+                    placeholder="voice_id / 声音名"
+                    onInput={(event) => update({ voice: { ...(draft().voice ?? {}), voice_id: event.currentTarget.value } })}
+                  />
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                  <Input
+                    value={String(draft().voice?.speed ?? 1)}
+                    placeholder="语速"
+                    onInput={(event) => update({ voice: { ...(draft().voice ?? {}), speed: Number(event.currentTarget.value) || 1 } })}
+                  />
+                  <span class="text-[9.5px] text-faint">语音试听会在生成阶段使用；此处先记录默认声音。</span>
+                </div>
               </div>
 
               <details class="rounded-lg border border-line-soft bg-surface/40 px-3 py-2">
@@ -481,13 +694,76 @@ export default function PersonasPanel(props: Props) {
 
               <div class="flex items-center justify-end gap-2 pt-1">
                 <Button size="sm" variant="ghost" onClick={create}>取消</Button>
-                <Button size="sm" variant="primary" disabled={saving()} onClick={() => void save()}>
-                  {saving() ? "保存中…" : "保存数字模特"}
+                <Button size="sm" variant="secondary" disabled={saving() || baseBusy()} onClick={() => void save()}>
+                  {saving() ? "保存中…" : "只保存"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  loading={baseBusy()}
+                  disabled={saving() || !draft().name.trim() || !hasSourceImage()}
+                  title={!draft().name.trim() ? "先填写名称" : !hasSourceImage() ? "先上传人像" : "保存并用 Seedance 生成形象视频"}
+                  onClick={() => void saveAndGenerate()}
+                >
+                  保存并生成（Seedance）
                 </Button>
               </div>
             </div>
           </div>
         </div>
+
+      <Dialog open={assetOpen()} onOpenChange={setAssetOpen} title="从素材导入人像">
+        <div class="space-y-3">
+          <div class="flex items-center gap-2">
+            <Input
+              value={assetQuery()}
+              placeholder="搜索图片素材"
+              onInput={(event) => setAssetQuery(event.currentTarget.value)}
+            />
+            <Button
+              size="sm"
+              variant="secondary"
+              class="h-9 w-9 shrink-0 !px-0"
+              title="上传新图"
+              aria-label="上传新图"
+              onClick={() => { setAssetOpen(false); fileInput?.click(); }}
+            >
+              <Icon name="plus" size={16} />
+            </Button>
+          </div>
+
+          <Show when={assetError()}>
+            <div class="rounded-lg border border-bad/30 bg-bad/5 px-3 py-2 text-[11px] text-bad">{assetError()}</div>
+          </Show>
+
+          <Show when={!assetLoading()} fallback={<div class="py-12 text-center text-[11px] text-faint">加载中…</div>}>
+            <Show
+              when={filteredAssets().length > 0}
+              fallback={
+                <div class="rounded-lg border border-dashed border-line px-4 py-12 text-center">
+                  <div class="text-[12px] text-dim">素材库里还没有图片</div>
+                  <p class="mt-1 text-[10.5px] text-faint">先上传一张人像，再从这里选择。</p>
+                </div>
+              }
+            >
+              <div class="grid max-h-[55vh] grid-cols-3 gap-2 overflow-auto sm:grid-cols-4">
+                <For each={filteredAssets()}>
+                  {(asset) => (
+                    <button
+                      type="button"
+                      class="overflow-hidden rounded-lg border border-line-soft bg-[#0b0e15] text-left hover:border-accent/60"
+                      onClick={() => chooseAsset(asset)}
+                    >
+                      <img src={mediaUrl(asset.path)} alt="" class="aspect-[3/4] w-full object-cover" />
+                      <div class="truncate px-1.5 py-1 text-[9.5px] text-faint">{asset.name}</div>
+                    </button>
+                  )}
+                </For>
+              </div>
+            </Show>
+          </Show>
+        </div>
+      </Dialog>
 
       <Dialog open={genOpen()} onOpenChange={setGenOpen} title="自动生成数字人形象">
         <div class="space-y-3">

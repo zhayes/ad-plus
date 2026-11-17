@@ -88,10 +88,13 @@ def _fallback_packet(project: dict[str, Any], brief: dict[str, Any], feedback: s
 
 
 def _prompt(project: dict[str, Any], brief: dict[str, Any], feedback: str) -> str:
-    duration = float(project.get("duration_s") or 15)
-    aspect = project.get("aspect") or "9:16"
+    settings = project.get("production_settings") if isinstance(project.get("production_settings"), dict) else {}
+    output = settings.get("output") if isinstance(settings.get("output"), dict) else {}
+    duration = float(output.get("duration_s") or project.get("duration_s") or 15)
+    aspect = str(output.get("aspect") or project.get("aspect") or "9:16")
     payload = json.dumps(project, ensure_ascii=False, indent=2)
     brief_text = json.dumps(brief, ensure_ascii=False, indent=2)
+    settings_text = json.dumps(settings, ensure_ascii=False, indent=2)
     return f"""You are the proposal director for Ad+, a short-form AI ad tool.
 
 Create ONE production-ready proposal for this project. Do not ask questions. Do not render.
@@ -101,6 +104,9 @@ PROJECT:
 
 BRIEF:
 {brief_text}
+
+PRODUCTION SETTINGS (these are user choices, do not silently change them):
+{settings_text}
 
 USER FEEDBACK (may be empty):
 {feedback or "none"}

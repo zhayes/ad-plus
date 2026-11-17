@@ -28,9 +28,12 @@ def app_data_dir() -> Path:
     override = os.environ.get("OPENMONTAGE_APP_DATA") or os.environ.get("ADPLUS_APP_DATA")
     if override:
         path = Path(override)
+    elif os.name == "nt":
+        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+        path = Path(base) / APP_DIR_NAME
     else:
         path = Path.home() / "Library" / "Application Support" / APP_DIR_NAME
-    if not path.exists():
+    if not path.exists() and os.name != "nt":
         _migrate_legacy(path)
     path.mkdir(parents=True, exist_ok=True)
     return path

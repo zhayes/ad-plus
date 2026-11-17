@@ -156,8 +156,9 @@ export default function ProjectOverview(props: Props) {
                   <Show
                     when={!editing()}
                     fallback={
-                      <div class="flex items-center gap-2">
+                      <div class="flex min-w-0 items-center gap-2">
                         <Input
+                          class="min-w-0"
                           value={titleDraft()}
                           onInput={(event) => setTitleDraft(event.currentTarget.value)}
                           onKeyDown={(event) => {
@@ -165,7 +166,7 @@ export default function ProjectOverview(props: Props) {
                             if (event.key === "Escape") setEditing(false);
                           }}
                         />
-                        <Button size="sm" loading={saving()} onClick={() => void saveTitle()}>
+                        <Button class="shrink-0" size="sm" loading={saving()} onClick={() => void saveTitle()}>
                           保存
                         </Button>
                       </div>

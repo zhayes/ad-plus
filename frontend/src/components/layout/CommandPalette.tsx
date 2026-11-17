@@ -31,10 +31,8 @@ export default function CommandPalette() {
   };
 
   const actions = (): Action[] => {
-    const studio = firstProjectId() ? `/studio/${firstProjectId()}` : "/projects";
     return [
       { id: "projects", label: "项目", group: "页面", hint: "⌘O", run: () => go("/projects") },
-      { id: "studio", label: "制作", group: "页面", run: () => (firstProjectId() ? go(studio) : newProject()) },
       { id: "assets", label: "资产", group: "页面", run: () => go("/assets") },
       { id: "tasks", label: "任务", group: "页面", run: () => go("/tasks") },
       { id: "settings", label: "设置", group: "页面", hint: "⌘,", run: () => go("/settings") },

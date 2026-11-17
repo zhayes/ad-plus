@@ -174,11 +174,35 @@ class ProjectApiTest(unittest.TestCase):
         self.assertTrue(exported.json()["deliverable"]["path"].endswith("final-cut.mp4"))
         self.assertEqual(len(self.client.get("/api/projects/sweet-potato-15s/deliverables").json()["deliverables"]), 1)
 
+    def test_production_settings_patch_is_visible(self) -> None:
+        prod = self.client.get("/api/projects/sweet-potato-15s/production")
+        settings = prod.json()["settings"]
+        settings["output"]["aspect"] = "16:9"
+        settings["output"]["resolution"] = "720p"
+        patched = self.client.patch(
+            "/api/projects/sweet-potato-15s",
+            json={"production_settings": settings},
+        )
+        self.assertEqual(patched.status_code, 200)
+        project = ps.load_project("sweet-potato-15s")
+        self.assertEqual(project["aspect"], "16:9")
+        self.assertGreaterEqual(project["production_settings"]["revision"], 2)
+
+    def test_stale_settings_do_not_break_listing(self) -> None:
+        path = self.tmp / "projects" / "sweet-potato-15s" / "project.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["production_settings"]["output"]["resolution"] = "8k"
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        rows = self.client.get("/api/projects")
+        self.assertEqual(rows.status_code, 200)
+        self.assertEqual(rows.json()["projects"][0]["id"], "sweet-potato-15s")
+        self.assertEqual(self.client.get("/api/projects/sweet-potato-15s").status_code, 200)
+
     def test_quote_approval_advances_project(self) -> None:
         quote_dir = self.tmp / "projects" / "sweet-potato-15s" / "quotes"
         quote_dir.mkdir(parents=True, exist_ok=True)
         (quote_dir / "q1.json").write_text(
-            json.dumps({"id": "q1", "project_id": "sweet-potato-15s", "status": "pending", "total_usd": 0.2}),
+            json.dumps({"id": "q1", "project_id": "sweet-potato-15s", "status": "pending", "total_usd": 0.2, "settings_revision": 1, "budget_usd": 2.0}),
             encoding="utf-8",
         )
         result = self.client.post("/api/quotes/q1", json={"project_id": "sweet-potato-15s", "approved": True})
@@ -226,6 +250,15 @@ class ProjectApiTest(unittest.TestCase):
         self.assertEqual(removed.status_code, 200)
         self.assertEqual(len(self.client.get("/api/assets?source=upload").json()["assets"]), 0)
 
+    def test_attach_text_file_stays_out_of_assets(self) -> None:
+        attached = self.client.post("/api/attach?name=script.md", content="# 脚本\n第一行".encode())
+        self.assertEqual(attached.status_code, 200, attached.text)
+        record = attached.json()
+        self.assertTrue(record["path"].startswith("uploads/attachments/"), record["path"])
+        self.assertTrue((self.tmp / record["path"]).is_file())
+        self.assertEqual(self.client.get("/api/assets?source=upload").json()["assets"], [])
+        self.assertEqual(self.client.post("/api/attach?name=empty.txt", content=b"").status_code, 400)
+
     def test_job_retry_queues_copy(self) -> None:
         jobs_dir = self.tmp / "projects" / "sweet-potato-15s" / "jobs"
         jobs_dir.mkdir(parents=True, exist_ok=True)
@@ -252,7 +285,7 @@ class ProjectApiTest(unittest.TestCase):
         self.assertNotEqual(job["id"], "j1")
 
     def test_spa_deep_links_serve_index(self) -> None:
-        for path in ("/projects", "/studio/sweet-potato-15s/storyboard", "/tasks", "/assets", "/assets/brands", "/settings"):
+        for path in ("/projects", "/studio/sweet-potato-15s/storyboard", "/tasks", "/assets", "/assets/brands", "/settings", "/restyle", "/restyle/project-f54a"):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
             self.assertIn("id=\"root\"", response.text)
@@ -297,6 +330,27 @@ class ProjectApiTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    def test_avatar_compose_blocks_empty_assets(self) -> None:
+        route = self.client.post("/api/projects/sweet-potato-15s/route", json={"route_id": "avatar_spokesperson"})
+        self.assertEqual(route.status_code, 200, route.text)
+        response = self.client.post("/api/projects/sweet-potato-15s/compose")
+        self.assertIn(response.status_code, {400, 409})
+        self.assertIn("素材", response.json().get("detail", ""))
+
+    def test_asset_generation_rejects_unknown_shots(self) -> None:
+        response = self.client.post(
+            "/api/projects/sweet-potato-15s/assets/generate",
+            json={"shot_ids": ["does-not-exist"]},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_audio_generation_rejects_unknown_shots(self) -> None:
+        response = self.client.post(
+            "/api/projects/sweet-potato-15s/audio/generate",
+            json={"shot_ids": ["does-not-exist"]},
+        )
+        self.assertEqual(response.status_code, 400)
+
     unittest.main()
 
 
@@ -317,6 +371,7 @@ class ProductionFlowTest(ProjectApiTest):
             "id": "q1", "project_id": project_id, "status": "approved",
             "headline": "test", "total_usd": 0, "low_usd": 0, "high_usd": 0,
             "eta_seconds": 60, "line_items": [], "assumptions": [],
+            "settings_revision": 1, "budget_usd": 2.0, "over_budget": False,
         }), encoding="utf-8")
         packet = {
             "concept": {"title": "测试概念", "hook": "第一秒", "insight": "原因", "visual_approach": "画面", "core_message": "信息", "cta": "行动"},
